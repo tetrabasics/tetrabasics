@@ -30,7 +30,7 @@ export default class Game {
     const [pieces, _queue] = boardString.split("?");
     // if the board cells have incorrect oordinates, this is the code to change
     return new HashMap<Point, BoardCell>(({ x, y }) => `${x},${y}`, pieces.split("").map((piece, i) => {
-      // TODO: remove magic number -19
+      // TODO: remove magic number 19
       const point = new Point(i % this.width, 19 - Math.floor(i / this.width));
       return [point, new BoardCell(this, point, fenNameToColor[piece])];
     }));
@@ -58,6 +58,7 @@ export class BoardCell {
     game.board.addChild(this.sprite);
     // If the board displays incorrectly, this is the code to change
     this.sprite.x = point.x * GAME_SCALE * CELL_SIZE;
+    // TODO: remove magic number 19
     this.sprite.y = (19 - point.y) * GAME_SCALE * CELL_SIZE;
   }
 

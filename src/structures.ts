@@ -1,4 +1,6 @@
 // Note: if two different objects have the same hash, one WILL override the other instead of making room
+/* HashMap allows users to pass in a hash function to provide semantic equality between similar objects.
+This class is primarily used for Point, since memory addresses are a bitch */
 export class HashMap<K, V> {
   private map: Map<string, [K, V]>;
 
@@ -17,28 +19,39 @@ export class HashMap<K, V> {
   public has = (key: K): boolean => this.map.has(this.toHash(key));
   // using Generator type instead of IterableIterator because god forbid i write actual code
   public *keys(): Generator<K> {
-    for (const value of this.map.values()) {
-      yield value[0];
+    for (const [key] of this.map.values()) {
+      yield key;
     }
   }
   public *values(): Generator<V> {
-    for (const value of this.map.values()) {
-      yield value[1];
+    for (const [_, value] of this.map.values()) {
+      yield value;
     }
   }
   public set = (key: K, value: V) => this.map.set(this.toHash(key), [key, value]);
   public get size() { return this.map.size; }
 }
 
-// IPoint is meant to better store data points (i.e. kick tables) and such. To convert to the Point class, see Point.from
+// IPoint is meant to better store data points (i.e. kick tables) and such. To convert to the Point class, see Point constructor
 export interface IPoint { x: number, y: number }
 
 export class Point implements IPoint {
-  constructor(public readonly x: number, public readonly y: number) { }
+  public readonly x: number;
+  public readonly y: number;
 
-  public delta(deltaX: number = 0, deltaY: number = 0): Point {
-    return new Point(this.x + deltaX, this.y + deltaY);
+  constructor(point: IPoint);
+  constructor(x: number, y: number);
+  constructor(first: number | IPoint, y?: number) {
+    if (typeof first === "number") {
+      this.x = first;
+      this.y = y!;
+    } else {
+      this.x = first.x;
+      this.y = first.y;
+    }
   }
 
-  public static from = ({ x, y }: IPoint) => new Point(x, y);
+  public delta({ x: deltaX, y: deltaY }: IPoint): Point {
+    return new Point(this.x + deltaX, this.y + deltaY);
+  }
 }
