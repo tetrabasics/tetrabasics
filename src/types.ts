@@ -1,3 +1,5 @@
+import { IPoint } from './structures';
+
 export enum CellColor {
   RED = 0,
   ORANGE = 1,
@@ -37,8 +39,6 @@ export const fenNameToColor: Record<string, CellColor> = {
   "#": CellColor.GARBAGE
 };
 
-export interface Point { x: number, y: number }
-
 export enum Direction {
   UP,
   RIGHT,
@@ -47,8 +47,8 @@ export enum Direction {
 }
 
 export interface WallKicks {
-  cw: Point[]
-  ccw: Point[]
+  cw: IPoint[]
+  ccw: IPoint[]
 }
 
 export const mainKickTable: Record<Direction, WallKicks> = {
@@ -89,7 +89,7 @@ export const iKickTable: Record<Direction, WallKicks> = {
   }
 }
 
-export const flipKickTable: Record<Direction, Point[]> = {
+export const flipKickTable: Record<Direction, IPoint[]> = {
   [Direction.UP]: [{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: 0 }, { x: -1, y: 0 }],
   [Direction.RIGHT]: [{ x: 1, y: 0 }, { x: 1, y: 2 }, { x: 1, y: 1 }, { x: 0, y: -2 }, { x: 0, y: 1 }],
   [Direction.DOWN]: [{ x: 0, y: -1 }, { x: -1, y: -1 }, { x: 1, y: -1 }, { x: -1, y: 0 }, { x: 1, y: 0 }],
@@ -98,8 +98,8 @@ export const flipKickTable: Record<Direction, Point[]> = {
 
 export interface MinoData {
   color: CellColor
-  cursorOffset: Point
-  pieceOffsets: Point[]
+  cursorOffset: IPoint
+  pieceOffsets: IPoint[]
 }
 
 export const minoToData: Record<MinoType, MinoData> = {

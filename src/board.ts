@@ -1,7 +1,8 @@
 import { Application, BaseTexture, Container, Rectangle, SCALE_MODES, Sprite, Texture } from 'pixi.js';
 import grid from '/skin/gloss.png'
 import loss from '/board/empty.png'
-import { fenNameToColor, CellColor, Point } from './types';
+import { CellColor, fenNameToColor } from './types';
+import { HashMap, Point } from './structures';
 
 const GAME_SCALE = 1;
 const CELL_SIZE = 30;
@@ -24,26 +25,23 @@ export default class Game {
     this.cells = this.makeCells(boardString);
   }
 
-  public makeCells(boardString?: string): Record<string, BoardCell> {
-    boardString ||= "_".repeat(this.width * this.height);
+  public makeCells(boardString: string = "_".repeat(this.width * this.height)): HashMap<Point, BoardCell> {
     // TODO: error checking
     const [pieces, _queue] = boardString.split("?");
-    return pieces.split("").reduce((a, b, i) => {
-      const row = Math.floor(i / this.width), col = i % this.width;
-      const cell = new BoardCell(this, row, col, fenNameToColor[b]);
-      a[this.hashPoint({ x: row, y: col })] = cell;
-      return a;
-    }, {} as Record<string, BoardCell>);
+    // if the board cells have incorrect oordinates, this is the code to change
+    return new HashMap<Point, BoardCell>(({ x, y }) => `${x},${y}`, pieces.split("").map((piece, i) => {
+      // TODO: remove magic number -19
+      const point = new Point(i % this.width, 19 - Math.floor(i / this.width));
+      return [point, new BoardCell(this, point, fenNameToColor[piece])];
+    }));
   }
-  
+
   // main board state
-  public cells: Record<string, BoardCell>;
-  // hash to string because fuck javascript hash codes
-  public hashPoint = ({ x, y }: Point): string => `${x},${y}`;
+  public cells: HashMap<Point, BoardCell>;
 }
 
 export class BoardCell {
-  public sprite: Sprite
+  public sprite: Sprite;
   // TODO: maybe using getters and setters isn't the best idea
   get isSolid() { return this.color != CellColor.NONE; }
   get Color() { return this.color }
@@ -53,21 +51,21 @@ export class BoardCell {
   }
   constructor(
     game: Game,
-    public row: number,
-    public column: number,
+    public point: Point,
     private color = CellColor.NONE,
   ) {
     this.sprite = new Sprite(BoardCell.getTexture(color));
     game.board.addChild(this.sprite);
-    this.sprite.x = column * GAME_SCALE * CELL_SIZE;
-    this.sprite.y = row * GAME_SCALE * CELL_SIZE;
+    // If the board displays incorrectly, this is the code to change
+    this.sprite.x = point.x * GAME_SCALE * CELL_SIZE;
+    this.sprite.y = (19 - point.y) * GAME_SCALE * CELL_SIZE;
   }
 
   // TODO: make this available to modules via export
   public static getTexture(color: CellColor): Texture {
     const texture = color == CellColor.NONE ?
       new Texture(BaseTexture.from(loss)) :
-      new Texture(BaseTexture.from(grid), new Rectangle(31 * color, 0, 30, 30))
+      new Texture(BaseTexture.from(grid), new Rectangle(31 * color, 0, 30, 30));
     texture.baseTexture.scaleMode = SCALE_MODES.NEAREST;
     return texture;
   }
