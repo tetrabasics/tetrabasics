@@ -29,11 +29,11 @@ export default class Game {
   }
 
   // TODO: idk where this even goes LOL
-  public makeCells(boardString: string = "_".repeat(this.width * this.height)): HashMap<Point, BoardCell> {
+  public makeCells(boardString: string = "_".repeat(this.width * this.height)): HashMap<IPoint, BoardCell> {
     // TODO: error checking
     const [pieces, _queue] = boardString.split("?");
     // if the board cells have incorrect coordinates, this is the code to change
-    return new HashMap<Point, BoardCell>(({ x, y }) => `${x},${y}`, pieces.split("").map((piece, i) => {
+    return new HashMap<IPoint, BoardCell>(({ x, y }) => `${x},${y}`, pieces.split("").map((piece, i) => {
       // TODO: remove magic number 19
       const point = new Point(i % this.width, 19 - Math.floor(i / this.width));
       return [point, new BoardCell(this, point, fenNameToColor[piece])];
@@ -42,7 +42,7 @@ export default class Game {
 
   // main board state
   // TODO: make this private to classes that aren't ActiveMino
-  public cells: HashMap<Point, BoardCell>;
+  public cells: HashMap<IPoint, BoardCell>;
   // TODO: make private after finished testing
   public activeMino: ActiveMino;
 }
@@ -92,6 +92,7 @@ export class BoardCell {
 export class ActiveMino {
   private minoContainer: Container;
   // this is a tuple because if i need to access i'm iterating over each one and not individual lookup
+  private origin = new Point(0, 0);
   private cells: { point: Point, sprite: Sprite }[] = [
     { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
     { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
@@ -103,35 +104,49 @@ export class ActiveMino {
     this.minoContainer = game.app.stage.addChild(new Container());
     this.minoContainer.addChild(...this.cells.map(({ sprite }) => sprite));
     // TODO: remove for testing
-    this.generate(MinoType.L);
+    this.generate(MinoType.I);
   }
 
   private generate(minoType: MinoType) {
     // TODO: destroy current mino if it exists already
     // TODO: move to constant field
-    const SPAWN_AREA = new Point(4, 19);
+    this.origin = new Point(4, 19).delta(minoToData[minoType].cursorOffset);
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
       cell.sprite.texture = BoardCell.getTexture(fenNameToColor[minoType]);
-      cell.point = SPAWN_AREA.delta(minoToData[minoType].pieceOffsets[i]);
+      cell.point = this.origin.delta(minoToData[minoType].pieceOffsets[i]);
       BoardCell.setCellCoordinates(cell.sprite, cell.point);
     }
   }
 
   // TODO: move this to Controls class
   public move(direction: Direction) {
-    if (!this.canMove(direction)) return;
-    for (let i = 0; i < this.cells.length; i++) {
-      const cell = this.cells[i];
-      cell.point = cell.point.delta(Point.DELTAS[direction]);
-      BoardCell.setCellCoordinates(cell.sprite, cell.point);
-    }
+    this.displace(point => point.delta(Point.DELTAS[direction]));
+    this.origin = this.origin.delta(Point.DELTAS[direction]);
   }
 
-  private canMove(direction: Direction): boolean {
-    return this.cells.every(({ point }) => {
-      const lowerCell = this.game.cells.get(point.delta(Point.DELTAS[direction]));
-      return lowerCell && !lowerCell.isSolid;
+  private displace(movingTo: (point: Point) => Point): boolean {
+    if (!this.cells.every(({ point }) => {
+      const nextCell = this.game.cells.get(movingTo(point));
+      return nextCell && !nextCell.isSolid;
+    })) return false;
+
+    for (let i = 0; i < this.cells.length; i++) {
+      const cell = this.cells[i];
+      cell.point = movingTo(cell.point);
+      BoardCell.setCellCoordinates(cell.sprite, cell.point);
+    }
+    return true;
+  }
+
+  // TODO: find out if i can abstract this logic out of move
+  public rotate(clockwise: boolean) {
+    // TODO: keep origin and point state organized so i don't have to change origin position every time i move uuururrrrghghghghgh
+    // and also recalculate origin + offset when doing these moves
+    this.displace(point => {
+      const offset = point.delta({ x: -this.origin.x, y: -this.origin.y });
+      const flipped = clockwise ? { x: offset.y, y: -offset.x } : { x: -offset.y, y: offset.x };
+      return this.origin.delta(flipped);
     });
   }
 }
