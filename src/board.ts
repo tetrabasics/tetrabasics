@@ -129,7 +129,7 @@ export class ActiveMino {
   }
 
   private canMoveDown(): boolean {
-    for (const { point, sprite } of this.cells) {
+    for (const { point } of this.cells) {
       const lowerCell = this.game.cells.get(point.delta(Point.DOWN));
       if (!lowerCell || lowerCell.isSolid) return false;
     }
