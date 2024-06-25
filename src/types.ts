@@ -41,9 +41,9 @@ export const fenNameToColor: Record<MinoType | string, CellColor> = {
 
 export enum Direction {
   UP,
-  RIGHT,
   DOWN,
-  LEFT
+  LEFT,
+  RIGHT
 }
 
 export interface WallKicks {

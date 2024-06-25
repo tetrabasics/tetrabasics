@@ -1,7 +1,7 @@
 import { Application, BaseTexture, Container, Rectangle, SCALE_MODES, Sprite, Texture } from 'pixi.js';
 import grid from '/skin/gloss.png'
 import loss from '/board/empty.png'
-import { CellColor, MinoType, fenNameToColor, minoToData } from './types';
+import { CellColor, Direction, MinoType, fenNameToColor, minoToData } from './types';
 import { HashMap, IPoint, Point } from './structures';
 
 const GAME_SCALE = 1;
@@ -92,21 +92,22 @@ export class BoardCell {
 export class ActiveMino {
   private minoContainer: Container;
   // this is a tuple because if i need to access i'm iterating over each one and not individual lookup
-  private cells: { point: Point, sprite: Sprite }[]
+  private cells: { point: Point, sprite: Sprite }[] = [
+    { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
+    { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
+    { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
+    { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
+  ];
 
   constructor(private game: Game) {
     this.minoContainer = game.app.stage.addChild(new Container());
-    this.cells = [
-      { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
-      { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
-      { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
-      { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
-    ];
     this.minoContainer.addChild(...this.cells.map(({ sprite }) => sprite));
+    // TODO: remove for testing
     this.generate(MinoType.L);
   }
 
   private generate(minoType: MinoType) {
+    // TODO: destroy current mino if it exists already
     // TODO: move to constant field
     const SPAWN_AREA = new Point(4, 19);
     for (let i = 0; i < this.cells.length; i++) {
@@ -117,22 +118,20 @@ export class ActiveMino {
     }
   }
 
-  // TODO: stop making these methods public dipshit
-  public moveDown() {
-    const canMoveDown = this.canMoveDown();
-    if (!canMoveDown) return;
+  // TODO: move this to Controls class
+  public move(direction: Direction) {
+    if (!this.canMove(direction)) return;
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
-      cell.point = cell.point.delta(Point.DOWN);
+      cell.point = cell.point.delta(Point.DELTAS[direction]);
       BoardCell.setCellCoordinates(cell.sprite, cell.point);
     }
   }
 
-  private canMoveDown(): boolean {
-    for (const { point } of this.cells) {
-      const lowerCell = this.game.cells.get(point.delta(Point.DOWN));
-      if (!lowerCell || lowerCell.isSolid) return false;
-    }
-    return true;
+  private canMove(direction: Direction): boolean {
+    return this.cells.every(({ point }) => {
+      const lowerCell = this.game.cells.get(point.delta(Point.DELTAS[direction]));
+      return lowerCell && !lowerCell.isSolid;
+    });
   }
 }

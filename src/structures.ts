@@ -1,3 +1,5 @@
+import { Direction } from './types';
+
 // Note: if two different objects have the same hash, one WILL override the other instead of making room
 /* HashMap allows users to pass in a hash function to provide semantic equality between similar objects.
 This class is primarily used for Point, since memory addresses are a bitch */
@@ -36,10 +38,12 @@ export class HashMap<K, V> {
 export interface IPoint { x: number, y: number }
 
 export class Point implements IPoint {
-  public static readonly UP: IPoint = { x: 0, y: 1 };
-  public static readonly DOWN: IPoint = { x: 0, y: -1 };
-  public static readonly LEFT: IPoint = { x: -1, y: 0 };
-  public static readonly RIGHT: IPoint = { x: 1, y: 0 };
+  public static readonly DELTAS: Record<Direction, IPoint> = {
+    [Direction.UP]: { x: 0, y: 1 },
+    [Direction.DOWN]: { x: 0, y: -1 },
+    [Direction.LEFT]: { x: -1, y: 0 },
+    [Direction.RIGHT]: { x: 1, y: 0 }
+  }
   public readonly x: number;
   public readonly y: number;
 
