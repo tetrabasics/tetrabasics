@@ -17,17 +17,17 @@ export enum CellColor {
 }
 
 export enum MinoType {
-  L = "L",
-  J = "J",
-  Z = "Z",
-  S = "S",
-  T = "T",
-  I = "I",
-  O = "O",
-  NONE = "NONE"
+  L = "l",
+  J = "j",
+  Z = "z",
+  S = "s",
+  T = "t",
+  I = "i",
+  O = "o",
+  NONE = "_"
 }
 
-export const fenNameToColor: Record<string, CellColor> = {
+export const fenNameToColor: Record<MinoType | string, CellColor> = {
   z: CellColor.RED,
   s: CellColor.GREEN,
   t: CellColor.PURPLE,

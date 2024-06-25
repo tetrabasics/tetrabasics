@@ -36,12 +36,17 @@ export class HashMap<K, V> {
 export interface IPoint { x: number, y: number }
 
 export class Point implements IPoint {
+  public static readonly UP: IPoint = { x: 0, y: 1 };
+  public static readonly DOWN: IPoint = { x: 0, y: -1 };
+  public static readonly LEFT: IPoint = { x: -1, y: 0 };
+  public static readonly RIGHT: IPoint = { x: 1, y: 0 };
   public readonly x: number;
   public readonly y: number;
 
+  constructor()
   constructor(point: IPoint);
   constructor(x: number, y: number);
-  constructor(first: number | IPoint, y?: number) {
+  constructor(first: number | IPoint = { x: 0, y: 0 }, y?: number) {
     if (typeof first === "number") {
       this.x = first;
       this.y = y!;
@@ -54,4 +59,6 @@ export class Point implements IPoint {
   public delta({ x: deltaX, y: deltaY }: IPoint): Point {
     return new Point(this.x + deltaX, this.y + deltaY);
   }
+
+  public equals = (other: IPoint) => this.x == other.x && this.y == other.y;
 }
