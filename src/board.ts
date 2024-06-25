@@ -1,7 +1,7 @@
 import { Application, BaseTexture, Container, Rectangle, SCALE_MODES, Sprite, Texture } from 'pixi.js';
 import grid from '/skin/gloss.png'
 import loss from '/board/empty.png'
-import { CellColor, Direction, MinoType, fenNameToColor, minoToData } from './types';
+import { CellColor, Direction, MinoType, fenNameToColor, iKickTable, mainKickTable, minoToData } from './types';
 import { HashMap, IPoint, Point } from './structures';
 
 const GAME_SCALE = 1;
@@ -91,8 +91,11 @@ export class BoardCell {
 
 export class ActiveMino {
   private minoContainer: Container;
-  // this is a tuple because if i need to access i'm iterating over each one and not individual lookup
+  // TODO: move active mino state into another class maybe
+  private activeMinoType = MinoType.NONE;
+  private rotation = Direction.UP;
   private origin = new Point(0, 0);
+  // this is a tuple because if i need to access i'm iterating over each one and not individual lookup
   private cells: { point: Point, sprite: Sprite }[] = [
     { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
     { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
@@ -104,12 +107,13 @@ export class ActiveMino {
     this.minoContainer = game.app.stage.addChild(new Container());
     this.minoContainer.addChild(...this.cells.map(({ sprite }) => sprite));
     // TODO: remove for testing
-    this.generate(MinoType.I);
+    this.generate(MinoType.J);
   }
 
   private generate(minoType: MinoType) {
+    this.activeMinoType = minoType;
+    this.rotation = Direction.UP;
     // TODO: destroy current mino if it exists already
-    // TODO: move to constant field
     this.origin = new Point(4, 19).delta(minoToData[minoType].cursorOffset);
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
@@ -121,10 +125,12 @@ export class ActiveMino {
 
   // TODO: move this to Controls class
   public move(direction: Direction) {
-    this.displace(point => point.delta(Point.DELTAS[direction]));
+    const isMoved = this.displace(point => point.delta(Point.DELTAS[direction]));
+    if (!isMoved) return;
     this.origin = this.origin.delta(Point.DELTAS[direction]);
   }
 
+  // displaces all points of the active mino, NOT moving the origin in the process. Returns if successful.
   private displace(movingTo: (point: Point) => Point): boolean {
     if (!this.cells.every(({ point }) => {
       const nextCell = this.game.cells.get(movingTo(point));
@@ -139,14 +145,33 @@ export class ActiveMino {
     return true;
   }
 
-  // TODO: find out if i can abstract this logic out of move
   public rotate(clockwise: boolean) {
+    // make sure to undo this action if no rotations work
+    const oldRotation = this.rotation;
+    this.rotation = (this.rotation + (clockwise ? 1 : -1) + 4) % 4;
     // TODO: keep origin and point state organized so i don't have to change origin position every time i move uuururrrrghghghghgh
     // and also recalculate origin + offset when doing these moves
-    this.displace(point => {
-      const offset = point.delta({ x: -this.origin.x, y: -this.origin.y });
-      const flipped = clockwise ? { x: offset.y, y: -offset.x } : { x: -offset.y, y: offset.x };
+    const mainAttempt = this.displace(point => {
+      const { x, y } = point.delta({ x: -this.origin.x, y: -this.origin.y });
+      const flipped = clockwise ? { x: y, y: -x } : { x: -y, y: x };
       return this.origin.delta(flipped);
     });
+    if (mainAttempt) return;
+    // TODO: rewrite this.displace() so that it can take multiple fallback points
+    const kickTable = this.activeMinoType == MinoType.I ? iKickTable : mainKickTable;
+    // TODO: i dont like how i have to use the old rotation, maybe change the kick table around
+    const offsets = kickTable[oldRotation][clockwise ? "cw" : "ccw"];
+    const tableAttempt = offsets.find(offset => this.displace(point => {
+      // TODO: make any changes from the above rotation attempt to this too
+      const { x, y } = point.delta({ x: -this.origin.x, y: -this.origin.y });
+      const flipped = clockwise ? { x: y, y: -x } : { x: -y, y: x };
+      return this.origin.delta(flipped).delta(offset);
+    }));
+    if (!tableAttempt) {
+      this.rotation = oldRotation;
+      return;
+    }
+    this.origin = this.origin.delta(tableAttempt);
+    // TODO: idk i think there might need to be mroe code i'm just not sure what
   }
 }

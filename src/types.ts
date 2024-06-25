@@ -1,5 +1,6 @@
 import { IPoint } from './structures';
 
+// this is numbered for skins to recognize the index of the texture
 export enum CellColor {
   RED = 0,
   ORANGE = 1,
@@ -39,11 +40,12 @@ export const fenNameToColor: Record<MinoType | string, CellColor> = {
   "#": CellColor.GARBAGE
 };
 
+// this is numbered for cw/ccw rotation to be addition/subtraction
 export enum Direction {
-  UP,
-  DOWN,
-  LEFT,
-  RIGHT
+  UP = 0,
+  RIGHT = 1,
+  DOWN = 2,
+  LEFT = 3,
 }
 
 export interface WallKicks {
