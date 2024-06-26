@@ -1,4 +1,4 @@
-import Board from './board';
+import Board from './game/game';
 import { Direction } from './types';
 
 // const board = new Board();
