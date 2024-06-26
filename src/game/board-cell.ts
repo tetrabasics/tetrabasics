@@ -6,10 +6,11 @@ import { IPoint, Point } from '../structures';
 import grid from '/skin/gloss.png'
 import loss from '/board/empty.png'
 
+/* Represents a single grid cell on the board. Solidness and color are set by the Color property. */
 export default class BoardCell {
   public sprite: Sprite;
-  // TODO: maybe using getters and setters isn't the best idea
   public isSolid = () => this.color != CellColor.NONE;
+  // TODO: maybe using getters and setters isn't the best idea
   get Color() { return this.color; }
   set Color(color: CellColor) {
     this.sprite.texture = BoardCell.getTexture(color);
