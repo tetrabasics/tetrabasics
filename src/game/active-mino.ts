@@ -1,6 +1,6 @@
 import { Container, Sprite } from 'pixi.js';
 import { Point } from '../structures';
-import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable, mainKickTable } from '../types';
+import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable, mainKickTable, flipKickTable } from '../types';
 import BoardCell from './board-cell';
 import Game from './game';
 
@@ -61,27 +61,35 @@ export default class ActiveMino {
     return true;
   }
 
-  public rotate(clockwise: boolean) {
+  public rotate(rotationCount: -1 | 1 | 2) {
     // make sure to undo this action if no rotations work
     const oldRotation = this.rotation;
-    this.rotation = (this.rotation + (clockwise ? 1 : -1) + 4) % 4;
+    this.rotation = (this.rotation + rotationCount + 4) % 4;
     // TODO: keep origin and point state organized so i don't have to change origin position every time i move uuururrrrghghghghgh
     // and also recalculate origin + offset when doing these moves
     const mainAttempt = this.displace(point => {
       const { x, y } = point.delta({ x: -this.origin.x, y: -this.origin.y });
-      const flipped = clockwise ? { x: y, y: -x } : { x: -y, y: x };
-      return this.origin.delta(flipped);
+      const flippedOffset = {
+        [-1]: { x: -y, y: x },
+        [1]: { x: y, y: -x },
+        [2]: { x: -x, y: -y }
+      }[rotationCount];
+      return this.origin.delta(flippedOffset);
     });
     if (mainAttempt) return;
     // TODO: rewrite this.displace() so that it can take multiple fallback points
-    const kickTable = this.activeMinoType == MinoType.I ? iKickTable : mainKickTable;
     // TODO: i dont like how i have to use the old rotation, maybe change the kick table around
-    const offsets = kickTable[oldRotation][clockwise ? "cw" : "ccw"];
+    const offsets = rotationCount == 2 ? flipKickTable[oldRotation] :
+      (this.activeMinoType == MinoType.I ? iKickTable : mainKickTable)[oldRotation][rotationCount == 1 ? "cw" : "ccw"];
     const tableAttempt = offsets.find(offset => this.displace(point => {
       // TODO: make any changes from the above rotation attempt to this too
       const { x, y } = point.delta({ x: -this.origin.x, y: -this.origin.y });
-      const flipped = clockwise ? { x: y, y: -x } : { x: -y, y: x };
-      return this.origin.delta(flipped).delta(offset);
+      const flippedOffset = {
+        [-1]: { x: -y, y: x },
+        [1]: { x: y, y: -x },
+        [2]: { x: -x, y: -y }
+      }[rotationCount];
+      return this.origin.delta(flippedOffset).delta(offset);
     }));
     if (!tableAttempt) {
       this.rotation = oldRotation;

@@ -24,16 +24,17 @@ export default class GameControls {
     d: Action.MOVE_RIGHT,
     s: Action.SOFT_DROP,
     w: Action.HARD_DROP,
-    k: Action.ROTATE_CW,
-    l: Action.ROTATE_CCW,
+    k: Action.ROTATE_CCW,
+    l: Action.ROTATE_CW,
     i: Action.ROTATE_180,
     o: Action.HOLD,
     enter: Action.PAUSE
   });
   private pressedKeys = new Set<string>();
   constructor(game: Game, private activeMino: ActiveMino) {
-    game.app.view.onkeydown = this.keyDown;
-    game.app.view.onkeyup = this.keyUp;
+    // TODO: maybe change the body to a smaller focus window (Game rootElement constructor)
+    document.body.onkeydown = event => this.keyDown(event);
+    document.body.onkeyup = event => this.keyUp(event);
   }
 
   // TODO: put these delaying methods somewhere else
@@ -49,17 +50,17 @@ export default class GameControls {
     event.key == "d" && (this.activeMino.move(Direction.RIGHT))
     // TODO: handle inputs with timing events
     switch (action) {
-      case Action.MOVE_LEFT:
-        this.activeMino.move(Direction.LEFT);
-        break;
       case Action.HARD_DROP:
         this.activeMino.place();
         break;
       case Action.ROTATE_CW:
-        this.activeMino.rotate(true);
+        this.activeMino.rotate(1);
         break;
       case Action.ROTATE_CCW:
-        this.activeMino.rotate(false);
+        this.activeMino.rotate(-1);
+        break;
+      case Action.ROTATE_180:
+        this.activeMino.rotate(2);
         break;
     }
   }
