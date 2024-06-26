@@ -43,6 +43,8 @@ export default class GameControls {
     this.pressedKeys.add(event.key);
     const action = this.controls.get(event.key);
     if (action === undefined) return;
+    
+    // TODO: handle inputs with timing events
     event.key == " " && (this.activeMino.move(Direction.UP))
     event.key == "a" && (this.activeMino.move(Direction.LEFT))
     event.key == "s" && (this.activeMino.move(Direction.DOWN))
@@ -59,7 +61,7 @@ export default class GameControls {
     //     break;
     // }
   }
-
+  
   private keyUp(event: KeyboardEvent) {
     this.pressedKeys.delete(event.key);
   }

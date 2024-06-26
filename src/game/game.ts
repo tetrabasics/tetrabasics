@@ -11,6 +11,7 @@ export const CELL_SIZE = 30 * GAME_SCALE;
 /* The main class that creates a game object. This contains the main game structure and composes key classes for functionality. */
 export default class Game {
   // app
+  // TODO: idk if i want these to be public maybe i can hide it
   public readonly app: Application<HTMLCanvasElement>;
   public readonly board: Container;
   public readonly controls: GameControls;
@@ -50,8 +51,7 @@ export default class Game {
   // main board state
   // TODO: make this private to classes that aren't ActiveMino
   public cells: HashMap<IPoint, BoardCell>;
-  // TODO: make private after finished testing
-  public activeMino: ActiveMino;
+  private activeMino: ActiveMino;
 
   // checks if a row needs to be cleared and clears it
   public clearLines(rows: Set<number>) {
