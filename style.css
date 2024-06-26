@@ -1,3 +1,5 @@
-body {
-  background-color: #111; /* my eyes!!! */
+@media (prefers-color-scheme: dark) {
+  :root {
+    background-color: #111;
+  }
 }
