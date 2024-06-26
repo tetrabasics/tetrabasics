@@ -43,21 +43,25 @@ export default class GameControls {
     this.pressedKeys.add(event.key);
     const action = this.controls.get(event.key);
     if (action === undefined) return;
-    event.key == " " && (this.activeMino.move(Direction.UP))
+    // TODO: DAS/ARR/SDF timing
     event.key == "a" && (this.activeMino.move(Direction.LEFT))
     event.key == "s" && (this.activeMino.move(Direction.DOWN))
     event.key == "d" && (this.activeMino.move(Direction.RIGHT))
-    event.key == "l" && (this.activeMino.rotate(true));
-    event.key == "k" && (this.activeMino.rotate(false));
-    event.key == "w" && (this.activeMino.place());
     // TODO: handle inputs with timing events
-    // switch (action) {
-    //   case Action.MOVE_LEFT:
-    //     this.activeMino.move(Direction.LEFT);
-    //     break;
-    //   default:
-    //     break;
-    // }
+    switch (action) {
+      case Action.MOVE_LEFT:
+        this.activeMino.move(Direction.LEFT);
+        break;
+      case Action.HARD_DROP:
+        this.activeMino.place();
+        break;
+      case Action.ROTATE_CW:
+        this.activeMino.rotate(true);
+        break;
+      case Action.ROTATE_CCW:
+        this.activeMino.rotate(false);
+        break;
+    }
   }
 
   private keyUp(event: KeyboardEvent) {

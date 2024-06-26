@@ -16,8 +16,9 @@
     /* Linting */
     "strict": true,
     "noImplicitAny": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    // TODO: re-enable these when production starts
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"]
