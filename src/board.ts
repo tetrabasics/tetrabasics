@@ -13,14 +13,14 @@ export default class Game {
 
   constructor(
     public readonly width = 10,
-    public readonly height = 20,
+    public readonly height = 40,
     // TODO: make options object
     boardString?: string,
     rootElement: HTMLElement = document.body
   ) {
     this.app = new Application<HTMLCanvasElement>({
       width: width * CELL_SIZE,
-      height: height * CELL_SIZE
+      height: height / 2 * CELL_SIZE
     });
     this.board = this.app.stage.addChild(new Container());
     this.activeMino = new ActiveMino(this);
@@ -33,9 +33,10 @@ export default class Game {
     // TODO: error checking
     const [pieces, _queue] = boardString.split("?");
     // if the board cells have incorrect coordinates, this is the code to change
-    return new HashMap<IPoint, BoardCell>(({ x, y }) => `${x},${y}`, pieces.split("").map((piece, i) => {
+    return new HashMap<IPoint, BoardCell>(({ x, y }) => `${x},${y}`, pieces.padStart(400, "_").split("").map((piece, i) => {
       // TODO: remove magic number 19
-      const point = new Point(i % this.width, 19 - Math.floor(i / this.width));
+      const point = new Point(i % this.width, 39 - Math.floor(i / this.width));
+      // TODO: make top board cells invisible
       return [point, new BoardCell(this, point, fenNameToColor[piece])];
     }));
   }
@@ -45,12 +46,42 @@ export default class Game {
   public cells: HashMap<IPoint, BoardCell>;
   // TODO: make private after finished testing
   public activeMino: ActiveMino;
+
+  // checks if a row needs to be cleared and clears it
+  public clearLines(rows: Set<number>) {
+    // TODO: since i'm using a hashmap for cells, clearing rows is decently intensive so i need to find a better solution (~1ms is subjective)
+    const clearingRows = new Set([...rows].filter(row => this.rowIsFilled(row)));
+    // rowOffset declares how many rows below this one are currently being cleared
+    for (let row = 0, rowOffset = 0; row < this.height; row++) {
+      if (!rowOffset && !clearingRows.has(row)) continue;
+      if (clearingRows.has(row)) {
+        // TODO: could maybe abstract this code to loop over all cells in a row?
+        for (let x = 0; x < this.width; x++) {
+          this.cells.get({ x, y: row })!.Color = CellColor.NONE;
+        }
+        rowOffset++;
+      } else {
+        // swap rows here (only swapping color because that's the only value that i really need)
+        for (let x = 0; x < this.width; x++) {
+          const currentCell = this.cells.get({ x, y: row - rowOffset })!, lowerCell = this.cells.get({ x, y: row })!;
+          [currentCell.Color, lowerCell.Color] = [lowerCell.Color, currentCell.Color];
+        }
+      }
+    }
+  }
+
+  private rowIsFilled(row: number) {
+    for (let x = 0; x < this.width; x++) {
+      if (!this.cells.get({ x, y: row })!.isSolid()) return false;
+    }
+    return true;
+  }
 }
 
 export class BoardCell {
   public sprite: Sprite;
   // TODO: maybe using getters and setters isn't the best idea
-  get isSolid() { return this.color != CellColor.NONE; }
+  public isSolid = () => this.color != CellColor.NONE;
   get Color() { return this.color }
   set Color(color: CellColor) {
     this.sprite.texture = BoardCell.getTexture(color);
@@ -124,17 +155,18 @@ export class ActiveMino {
   }
 
   // TODO: move this to Controls class
-  public move(direction: Direction) {
+  public move(direction: Direction): boolean {
     const isMoved = this.displace(point => point.delta(Point.DELTAS[direction]));
-    if (!isMoved) return;
+    if (!isMoved) return false;
     this.origin = this.origin.delta(Point.DELTAS[direction]);
+    return true;
   }
 
   // displaces all points of the active mino, NOT moving the origin in the process. Returns if successful.
   private displace(movingTo: (point: Point) => Point): boolean {
     if (!this.cells.every(({ point }) => {
       const nextCell = this.game.cells.get(movingTo(point));
-      return nextCell && !nextCell.isSolid;
+      return nextCell && !nextCell.isSolid();
     })) return false;
 
     for (let i = 0; i < this.cells.length; i++) {
@@ -172,6 +204,19 @@ export class ActiveMino {
       return;
     }
     this.origin = this.origin.delta(tableAttempt);
-    // TODO: idk i think there might need to be mroe code i'm just not sure what
+    // TODO: idk i think there might need to be more code i'm just not sure what
+  }
+
+  public place() {
+    // TODO: make this hard drop and move it somewhere else
+    while (this.move(Direction.DOWN));
+    for (const { point } of this.cells) {
+      this.game.cells.get(point)!.Color = minoToData[this.activeMinoType].color;
+    }
+    // TODO: clear lines when a piece fills
+    // TODO: maybe check all lines if a row can be cleared? this might not be needed but it could help
+    this.game.clearLines(new Set(this.cells.map(cell => cell.point.y)));
+    const validMinos = Object.values(MinoType).filter(x => x != MinoType.NONE);
+    this.generate(validMinos[Math.floor(Math.random() * validMinos.length)]);
   }
 }
