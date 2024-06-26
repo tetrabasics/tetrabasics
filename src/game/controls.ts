@@ -60,7 +60,7 @@ export default class GameControls {
     //     break;
     // }
   }
-
+  
   private keyUp(event: KeyboardEvent) {
     this.pressedKeys.delete(event.key);
   }
