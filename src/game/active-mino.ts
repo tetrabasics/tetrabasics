@@ -4,7 +4,6 @@ import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable,
 import BoardCell from './board-cell';
 import Game from './game';
 
-/* Contains the state and properties for the active mino that will eventually be placed. */
 export default class ActiveMino {
   private minoContainer: Container;
   // TODO: move active mino state into another class maybe

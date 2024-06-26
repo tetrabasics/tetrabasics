@@ -32,8 +32,8 @@ export default class GameControls {
   });
   private pressedKeys = new Set<string>();
   constructor(game: Game, private activeMino: ActiveMino) {
-    document.body.onkeydown = event => this.keyDown(event);
-    document.body.onkeyup = event => this.keyUp(event);
+    game.app.view.onkeydown = this.keyDown;
+    game.app.view.onkeyup = this.keyUp;
   }
 
   // TODO: put these delaying methods somewhere else
@@ -43,8 +43,6 @@ export default class GameControls {
     this.pressedKeys.add(event.key);
     const action = this.controls.get(event.key);
     if (action === undefined) return;
-    
-    // TODO: handle inputs with timing events
     event.key == " " && (this.activeMino.move(Direction.UP))
     event.key == "a" && (this.activeMino.move(Direction.LEFT))
     event.key == "s" && (this.activeMino.move(Direction.DOWN))
@@ -61,7 +59,7 @@ export default class GameControls {
     //     break;
     // }
   }
-  
+
   private keyUp(event: KeyboardEvent) {
     this.pressedKeys.delete(event.key);
   }
