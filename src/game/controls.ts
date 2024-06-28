@@ -31,25 +31,53 @@ export default class GameControls {
     enter: Action.PAUSE
   });
   private pressedKeys = new Set<string>();
+  // for calculating delta
   constructor(game: Game, private activeMino: ActiveMino) {
     // TODO: maybe change the body to a smaller focus window (Game rootElement constructor)
     document.body.onkeydown = event => this.keyDown(event);
     document.body.onkeyup = event => this.keyUp(event);
+    document.body.onblur = () => this.pressedKeys.clear();
   }
 
-  // TODO: put these delaying methods somewhere else
-  private FRAME = () => new Promise<void>(r => requestAnimationFrame(() => r()));
-  private WAIT = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+  // TODO: move timeouts to update function to follow execution flow
+  private shiftTimeout: number | null = null;
+  private shiftDirection: Direction.LEFT | Direction.RIGHT | null = null;
+  private softDropTimeout: number | null = null;
   private async keyDown(event: KeyboardEvent) {
+    if (this.pressedKeys.has(event.key)) return;
     this.pressedKeys.add(event.key);
     const action = this.controls.get(event.key);
     if (action === undefined) return;
-    // TODO: DAS/ARR/SDF timing
-    event.key == "a" && (this.activeMino.move(Direction.LEFT))
-    event.key == "s" && (this.activeMino.move(Direction.DOWN))
-    event.key == "d" && (this.activeMino.move(Direction.RIGHT))
+    // TODO: encapsulate DAS/ARR/SDF numbers
+    const DAS = 130, ARR = 10, SDF: number = 40;
     // TODO: handle inputs with timing events
     switch (action) {
+      case Action.MOVE_LEFT:
+        if (this.shiftTimeout) clearInterval(this.shiftTimeout);
+        this.shiftDirection = Direction.LEFT;
+        this.activeMino.move(Direction.LEFT);
+        this.shiftTimeout = setTimeout(() => {
+          this.activeMino.move(Direction.LEFT);
+          if (!ARR) while (this.activeMino.move(Direction.LEFT));
+          this.shiftTimeout = setInterval(() => this.activeMino.move(Direction.LEFT), ARR);
+        }, DAS);
+        break;
+      case Action.MOVE_RIGHT:
+        if (this.shiftTimeout) clearInterval(this.shiftTimeout);
+        this.shiftDirection = Direction.RIGHT;
+        this.activeMino.move(Direction.RIGHT);
+        this.shiftTimeout = setTimeout(() => {
+          this.activeMino.move(Direction.RIGHT);
+          if (!ARR) while (this.activeMino.move(Direction.RIGHT));
+          this.shiftTimeout = setInterval(() => this.activeMino.move(Direction.RIGHT), ARR);
+        }, DAS);
+        break;
+      case Action.SOFT_DROP:
+        if (this.softDropTimeout) return;
+        this.activeMino.move(Direction.DOWN);
+        if (SDF == -1) this.softDropTimeout = setInterval(() => this.activeMino.move(Direction.DOWN), 0);
+        else this.softDropTimeout = setInterval(() => this.activeMino.move(Direction.DOWN), 500 / SDF);
+        break;
       case Action.HARD_DROP:
         this.activeMino.place();
         break;
@@ -67,6 +95,17 @@ export default class GameControls {
 
   private keyUp(event: KeyboardEvent) {
     this.pressedKeys.delete(event.key);
+    const action = this.controls.get(event.key);
+    if (this.softDropTimeout) {
+      clearInterval(this.softDropTimeout);
+      this.softDropTimeout = null;
+    }
+    if (this.shiftTimeout &&
+      ((action == Action.MOVE_LEFT && this.shiftDirection == Direction.LEFT) ||
+      (action == Action.MOVE_RIGHT && this.shiftDirection == Direction.RIGHT))) {
+      clearInterval(this.shiftTimeout);
+      this.shiftTimeout = null;
+    }
   }
 
   public isPressed(action: Action) {

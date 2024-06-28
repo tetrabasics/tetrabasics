@@ -11,6 +11,7 @@ export const CELL_SIZE = 30 * GAME_SCALE;
 /* The main class that creates a game object. This contains the main game structure and composes key classes for functionality. */
 export default class Game {
   // app
+  // TODO: make these private
   public readonly app: Application<HTMLCanvasElement>;
   public readonly board: Container;
   public readonly controls: GameControls;
@@ -20,14 +21,15 @@ export default class Game {
     public readonly height = 40,
     // TODO: make options object
     boardString?: string,
-    rootElement: HTMLElement = document.body
+    rootElement: HTMLElement = document.body,
+    public readonly peekRows = 2
   ) {
     this.app = new Application<HTMLCanvasElement>({
       width: width * CELL_SIZE,
-      height: height / 2 * CELL_SIZE
+      height: ((height / 2) + peekRows) * CELL_SIZE
     });
     this.board = this.app.stage.addChild(new Container());
-    // initialize composition classes
+    // initialize composite classes
     this.activeMino = new ActiveMino(this);
     this.controls = new GameControls(this, this.activeMino);
     rootElement.appendChild(this.app.view);
@@ -39,11 +41,10 @@ export default class Game {
     // TODO: error checking
     const [pieces, _queue] = boardString.split("?");
     // if the board cells have incorrect coordinates, this is the code to change
-    return new HashMap<IPoint, BoardCell>(({ x, y }) => `${x},${y}`, pieces.padStart(400, "_").split("").map((piece, i) => {
-      // TODO: remove magic number 19
-      const point = new Point(i % this.width, 39 - Math.floor(i / this.width));
-      // TODO: make top board cells invisible
-      return [point, new BoardCell(this, point, fenNameToColor[piece])];
+    return new HashMap<IPoint, BoardCell>(({ x, y }) => `${x},${y}`, pieces.padStart(this.width * this.height, "_").split("").map((piece, i) => {
+      const point = new Point(i % this.width, (this.height - 1) - Math.floor(i / this.width));
+      console.log(point)
+      return [point, new BoardCell(this, point, fenNameToColor[piece], point.y < (this.height / 2))];
     }));
   }
 

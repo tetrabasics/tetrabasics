@@ -7,19 +7,21 @@ import grid from '/skin/gloss.png'
 import loss from '/board/empty.png'
 
 export default class BoardCell {
-  public sprite: Sprite;
+  public sprite: Sprite | null = null;
   // TODO: maybe using getters and setters isn't the best idea
   public isSolid = () => this.color != CellColor.NONE;
   get Color() { return this.color; }
   set Color(color: CellColor) {
-    this.sprite.texture = BoardCell.getTexture(color);
+    if (this.sprite) this.sprite.texture = BoardCell.getTexture(color);
     this.color = color;
   }
   constructor(
     game: Game,
     public point: Point,
     private color = CellColor.NONE,
+    isVisible = true
   ) {
+    if (!isVisible) return;
     this.sprite = new Sprite(BoardCell.getTexture(color));
     game.board.addChild(this.sprite);
     BoardCell.setCellCoordinates(this.sprite, point);
@@ -29,13 +31,8 @@ export default class BoardCell {
   public static setCellCoordinates(container: Container, point: IPoint) {
     // If the board displays incorrectly, this is the code to change
     container.x = point.x * CELL_SIZE;
-    // TODO: remove magic number 19
-    container.y = (19 - point.y) * CELL_SIZE;
-  }
-  // TODO: same with this but bundle it, check if i even need this
-  public static changeCellCoordinates(container: Container, point: IPoint) {
-    container.x += point.x * CELL_SIZE;
-    container.y += -point.y * CELL_SIZE;
+    // TODO: remove magic number 21
+    container.y = (21 - point.y) * CELL_SIZE;
   }
 
   // TODO: make this available to modules via export
