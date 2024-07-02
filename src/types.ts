@@ -17,7 +17,7 @@ export enum CellColor {
   NONE
 }
 
-export enum MinoType {
+export enum ValidMinoType {
   L = "l",
   J = "j",
   Z = "z",
@@ -25,8 +25,13 @@ export enum MinoType {
   T = "t",
   I = "i",
   O = "o",
+}
+
+export enum InvalidMinoType {
   NONE = "_"
 }
+
+export type MinoType = ValidMinoType | InvalidMinoType;
 
 export const fenNameToColor: Record<MinoType | string, CellColor> = {
   z: CellColor.RED,
@@ -53,6 +58,7 @@ export interface WallKicks {
   ccw: IPoint[]
 }
 
+// the direction key indicates where the old rotation is before applying kick offsets
 export const mainKickTable: Record<Direction, WallKicks> = {
   [Direction.UP]: {
     cw: [{ x: -1, y: 0 }, { x: -1, y: 1 }, { x: 0, y: -2 }, { x: -1, y: -2 }],
@@ -72,6 +78,7 @@ export const mainKickTable: Record<Direction, WallKicks> = {
   }
 }
 
+// the direction key indicates where the old rotation is before applying kick offsets
 export const iKickTable: Record<Direction, WallKicks> = {
   [Direction.UP]: {
     cw: [{ x: -2, y: 0 }, { x: 1, y: 0 }, { x: -2, y: -1 }, { x: 1, y: 2 }],
@@ -105,42 +112,42 @@ export interface MinoData {
 }
 
 export const minoToData: Record<MinoType, MinoData> = {
-  [MinoType.L]: {
+  [ValidMinoType.L]: {
     color: CellColor.ORANGE,
     cursorOffset: { x: 0, y: 0 },
     pieceOffsets: [{ x: -1, y: 0 }, { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }]
   },
-  [MinoType.J]: {
+  [ValidMinoType.J]: {
     color: CellColor.BLUE,
     cursorOffset: { x: 0, y: 0 },
     pieceOffsets: [{ x: -1, y: 1 }, { x: -1, y: 0 }, { x: 0, y: 0 }, { x: 1, y: 0 }]
   },
-  [MinoType.Z]: {
+  [ValidMinoType.Z]: {
     color: CellColor.RED,
     cursorOffset: { x: 0, y: 0 },
     pieceOffsets: [{ x: -1, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 0 }, { x: 1, y: 0 }]
   },
-  [MinoType.S]: {
+  [ValidMinoType.S]: {
     color: CellColor.GREEN,
     cursorOffset: { x: 0, y: 0 },
     pieceOffsets: [{ x: -1, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }]
   },
-  [MinoType.T]: {
+  [ValidMinoType.T]: {
     color: CellColor.PURPLE,
     cursorOffset: { x: 0, y: 0 },
     pieceOffsets: [{ x: -1, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 0 }]
   },
-  [MinoType.O]: {
+  [ValidMinoType.O]: {
     color: CellColor.YELLOW,
     cursorOffset: { x: 0.5, y: 0.5 },
     pieceOffsets: [{ x: -0.5, y: 0.5 }, { x: -0.5, y: -0.5 }, { x: 0.5, y: -0.5 }, { x: 0.5, y: 0.5 }]
   },
-  [MinoType.I]: {
+  [ValidMinoType.I]: {
     color: CellColor.CYAN,
     cursorOffset: { x: 0.5, y: -0.5 },
     pieceOffsets: [{ x: -1.5, y: 0.5 }, { x: -0.5, y: 0.5 }, { x: 0.5, y: 0.5 }, { x: 1.5, y: 0.5 }]
   },
-  [MinoType.NONE]: {
+  [InvalidMinoType.NONE]: {
     color: CellColor.NONE,
     cursorOffset: { x: 0, y: 0 },
     pieceOffsets: []

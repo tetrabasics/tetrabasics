@@ -28,11 +28,11 @@ export default class BoardCell {
   }
 
   // TODO: make this available to some classes by export
-  public static setCellCoordinates(container: Container, point: IPoint) {
+  public static setCellCoordinates(container: Container, point: IPoint, relHeight = 22) {
     // If the board displays incorrectly, this is the code to change
     container.x = point.x * CELL_SIZE;
     // TODO: remove magic number 21
-    container.y = (21 - point.y) * CELL_SIZE;
+    container.y = (relHeight - point.y - 1) * CELL_SIZE;
   }
 
   // TODO: make this available to modules via export

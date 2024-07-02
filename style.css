@@ -3,3 +3,16 @@
     background-color: #111;
   }
 }
+
+/* Board Styling */
+#board {
+  display: flex;
+  /* TODO: set max height to board and not queue */
+  height: 660px;
+}
+.board-queue {
+  /* max-height: 100%; */
+  display: flex;
+  flex-direction: column;
+  /* flex-wrap: wrap; */
+}

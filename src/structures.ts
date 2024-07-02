@@ -38,14 +38,14 @@ export class HashMap<K, V> {
 export interface IPoint { x: number, y: number }
 
 export class Point implements IPoint {
+  public readonly x: number;
+  public readonly y: number;
   public static readonly DELTAS: Record<Direction, IPoint> = {
     [Direction.UP]: { x: 0, y: 1 },
     [Direction.DOWN]: { x: 0, y: -1 },
     [Direction.LEFT]: { x: -1, y: 0 },
     [Direction.RIGHT]: { x: 1, y: 0 }
   }
-  public readonly x: number;
-  public readonly y: number;
 
   constructor()
   constructor(point: IPoint);

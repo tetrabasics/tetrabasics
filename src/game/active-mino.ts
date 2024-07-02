@@ -1,41 +1,56 @@
-import { Container, Sprite } from 'pixi.js';
-import { Point } from '../structures';
-import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable, mainKickTable, flipKickTable } from '../types';
+import { Application, Container, Sprite } from 'pixi.js';
+import { HashMap, IPoint, Point } from '../structures';
+import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable, mainKickTable, flipKickTable, ValidMinoType, InvalidMinoType } from '../types';
 import BoardCell from './board-cell';
 import Game from './game';
+import PieceQueue from './queue';
 
-export default class ActiveMino {
-  private minoContainer: Container;
-  // TODO: move active mino state into another class maybe
-  private activeMinoType = MinoType.NONE;
-  private rotation = Direction.UP;
-  private origin = new Point(0, 0);
+// For piece queues, basically just minos that don't move at all
+export class StaticMino {
+  protected minoContainer: Container;
+  protected origin = new Point(0, 0);
   // this is a tuple because if i need to access i'm iterating over each one and not individual lookup
-  private cells: { point: Point, sprite: Sprite }[] = [
+  protected readonly cells = [
     { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
     { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
     { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
-    { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
+    { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) }
   ];
 
-  constructor(private game: Game) {
-    this.minoContainer = game.app.stage.addChild(new Container());
+  // TODO: remove thing for invalid minos
+  public assemble(minoType: MinoType, origin: Point, gameHeight = 5) {
+    // TODO: destroy current mino if it exists already
+    this.origin = origin.delta(minoToData[minoType].cursorOffset);
+    for (let i = 0; i < this.cells.length; i++) {
+      const cell = this.cells[i];
+      cell.sprite.texture = BoardCell.getTexture(fenNameToColor[minoType]);
+      cell.point = this.origin.delta(minoToData[minoType].pieceOffsets[i]);
+      BoardCell.setCellCoordinates(cell.sprite, cell.point, gameHeight);
+    }
+  }
+
+  constructor(app: Application<HTMLCanvasElement>) {
+    this.minoContainer = app.stage.addChild(new Container());
     this.minoContainer.addChild(...this.cells.map(({ sprite }) => sprite));
+  }
+}
+
+// These ones DO move
+export default class ActiveMino extends StaticMino {
+  // TODO: move active mino state into another class maybe
+  private activeMinoType: MinoType = InvalidMinoType.NONE;
+  private rotation = Direction.UP;
+
+  constructor(private game: Game, private boardCells: HashMap<IPoint, BoardCell>, private pieceQueue: PieceQueue) {
+    super(game.app);
     // TODO: remove for testing
-    this.generate(MinoType.J);
+    this.generate(pieceQueue.next());
   }
 
   private generate(minoType: MinoType) {
     this.activeMinoType = minoType;
     this.rotation = Direction.UP;
-    // TODO: destroy current mino if it exists already
-    this.origin = new Point(4, 19).delta(minoToData[minoType].cursorOffset);
-    for (let i = 0; i < this.cells.length; i++) {
-      const cell = this.cells[i];
-      cell.sprite.texture = BoardCell.getTexture(fenNameToColor[minoType]);
-      cell.point = this.origin.delta(minoToData[minoType].pieceOffsets[i]);
-      BoardCell.setCellCoordinates(cell.sprite, cell.point);
-    }
+    this.assemble(minoType, new Point(4, 19), 22);
   }
 
   // TODO: move this to Controls class
@@ -49,7 +64,7 @@ export default class ActiveMino {
   // displaces all points of the active mino, NOT moving the origin in the process. Returns if successful.
   private displace(movingTo: (point: Point) => Point): boolean {
     if (!this.cells.every(({ point }) => {
-      const nextCell = this.game.cells.get(movingTo(point));
+      const nextCell = this.boardCells.get(movingTo(point));
       return nextCell && !nextCell.isSolid();
     })) return false;
 
@@ -78,9 +93,9 @@ export default class ActiveMino {
     });
     if (mainAttempt) return;
     // TODO: rewrite this.displace() so that it can take multiple fallback points
-    // TODO: i dont like how i have to use the old rotation, maybe change the kick table around
+    // TODO: this looks ugly i should change this
     const offsets = rotationCount == 2 ? flipKickTable[oldRotation] :
-      (this.activeMinoType == MinoType.I ? iKickTable : mainKickTable)[oldRotation][rotationCount == 1 ? "cw" : "ccw"];
+      (this.activeMinoType == ValidMinoType.I ? iKickTable : mainKickTable)[oldRotation][rotationCount == 1 ? "cw" : "ccw"];
     const tableAttempt = offsets.find(offset => this.displace(point => {
       // TODO: make any changes from the above rotation attempt to this too
       const { x, y } = point.delta({ x: -this.origin.x, y: -this.origin.y });
@@ -103,12 +118,11 @@ export default class ActiveMino {
     // TODO: make this hard drop and move it somewhere else
     while (this.move(Direction.DOWN));
     for (const { point } of this.cells) {
-      this.game.cells.get(point)!.Color = minoToData[this.activeMinoType].color;
+      this.boardCells.get(point)!.Color = minoToData[this.activeMinoType].color;
     }
-    // TODO: clear lines when a piece fills
     // TODO: maybe check all lines if a row can be cleared? this might not be needed but it could help
     this.game.clearLines(new Set(this.cells.map(cell => cell.point.y)));
-    const validMinos = Object.values(MinoType).filter(x => x != MinoType.NONE);
-    this.generate(validMinos[Math.floor(Math.random() * validMinos.length)]);
+    // TODO: this shows as any what the fuck
+    this.generate(this.pieceQueue.next());
   }
 }
