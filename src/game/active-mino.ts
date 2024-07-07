@@ -18,14 +18,14 @@ export class StaticMino {
   ];
 
   // TODO: remove thing for invalid minos
-  public assemble(minoType: MinoType, origin: Point, gameHeight = 5) {
+  public assemble(minoType: MinoType, origin: Point) {
     // TODO: destroy current mino if it exists already
     this.origin = origin.delta(minoToData[minoType].cursorOffset);
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
       cell.sprite.texture = BoardCell.getTexture(fenNameToColor[minoType]);
       cell.point = this.origin.delta(minoToData[minoType].pieceOffsets[i]);
-      BoardCell.setCellCoordinates(cell.sprite, cell.point, gameHeight);
+      BoardCell.setCellCoordinates(cell.sprite, cell.point);
     }
   }
 
@@ -50,7 +50,7 @@ export default class ActiveMino extends StaticMino {
   private generate(minoType: MinoType) {
     this.activeMinoType = minoType;
     this.rotation = Direction.UP;
-    this.assemble(minoType, new Point(4, 19), 22);
+    this.assemble(minoType, new Point(4, 19));
   }
 
   // TODO: move this to Controls class
