@@ -9,6 +9,12 @@ import PieceQueue from './queue';
 export class StaticMino {
   protected minoContainer: Container;
   protected origin = new Point(0, 0);
+
+  constructor(private app: Application<HTMLCanvasElement>) {
+    this.minoContainer = app.stage.addChild(new Container());
+    this.minoContainer.addChild(...this.cells.map(({ sprite }) => sprite));
+  }
+
   // this is a tuple because if i need to access i'm iterating over each one and not individual lookup
   protected readonly cells = [
     { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
@@ -25,13 +31,8 @@ export class StaticMino {
       const cell = this.cells[i];
       cell.sprite.texture = BoardCell.getTexture(fenNameToColor[minoType]);
       cell.point = this.origin.delta(minoToData[minoType].pieceOffsets[i]);
-      BoardCell.setCellCoordinates(cell.sprite, cell.point);
+      BoardCell.setCellCoordinates(this.app, cell.sprite, cell.point);
     }
-  }
-
-  constructor(app: Application<HTMLCanvasElement>) {
-    this.minoContainer = app.stage.addChild(new Container());
-    this.minoContainer.addChild(...this.cells.map(({ sprite }) => sprite));
   }
 }
 
@@ -41,8 +42,18 @@ export default class ActiveMino extends StaticMino {
   private activeMinoType: MinoType = InvalidMinoType.NONE;
   private rotation = Direction.UP;
 
+  private readonly ghostCells = [
+    new Sprite(BoardCell.getTexture(CellColor.NONE)),
+    new Sprite(BoardCell.getTexture(CellColor.NONE)),
+    new Sprite(BoardCell.getTexture(CellColor.NONE)),
+    new Sprite(BoardCell.getTexture(CellColor.NONE))
+  ]
+
   constructor(private game: Game, private boardCells: HashMap<IPoint, BoardCell>, private pieceQueue: PieceQueue) {
     super(game.app);
+    this.minoContainer.addChild(...this.ghostCells);
+    // TOOD: make the alpha not look awful
+    this.ghostCells.forEach(ghostCell => ghostCell.alpha = 0.5);
     // TODO: remove for testing
     this.generate(pieceQueue.next());
   }
@@ -51,6 +62,14 @@ export default class ActiveMino extends StaticMino {
     this.activeMinoType = minoType;
     this.rotation = Direction.UP;
     this.assemble(minoType, new Point(4, 19));
+    for (const ghostCell of this.ghostCells) {
+      ghostCell.texture = BoardCell.getTexture(fenNameToColor[minoType]);
+    }
+    if (!this.displace(point => point)) {
+      console.log("game over")
+      // TODO: supply game over logic
+      return;
+    }
   }
 
   // TODO: move this to Controls class
@@ -71,8 +90,29 @@ export default class ActiveMino extends StaticMino {
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
       cell.point = movingTo(cell.point);
-      BoardCell.setCellCoordinates(cell.sprite, cell.point);
+      BoardCell.setCellCoordinates(this.game.app, cell.sprite, cell.point);
     }
+
+    // calculate the amount of distance piece can travel, then update ghost cells
+    const shortestYDelta = this.cells.reduce((lowestY, { point: { x, y } }) => {
+      let iterations = -1;
+      while (true) {
+        const nextCell = this.boardCells.get({ x, y });
+        if ((nextCell && nextCell?.isSolid()) || y < 0) break;
+        y--;
+        iterations++;
+      }
+
+      return Math.min(lowestY, iterations);
+    }, Infinity)
+    // console.log(shortestYDelta)
+
+    for (let i = 0; i < this.cells.length; i++) {
+      const point = this.cells[i].point;
+      const ghostCell = this.ghostCells[i];
+      BoardCell.setCellCoordinates(this.game.app, ghostCell, point.delta({ y: -shortestYDelta }));
+    }
+
     return true;
   }
 

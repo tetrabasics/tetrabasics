@@ -60,7 +60,7 @@ export class Point implements IPoint {
     }
   }
 
-  public delta({ x: deltaX, y: deltaY }: IPoint): Point {
+  public delta({ x: deltaX = 0, y: deltaY = 0 }: Partial<IPoint>): Point {
     return new Point(this.x + deltaX, this.y + deltaY);
   }
 
