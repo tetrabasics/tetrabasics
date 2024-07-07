@@ -6,6 +6,7 @@ import BoardCell from './board-cell';
 import GameControls from './controls';
 import PieceQueue from './queue';
 import PieceHold from './hold';
+import GameEvents from './events';
 
 export const GAME_SCALE = 1;
 export const CELL_SIZE = 30 * GAME_SCALE;
@@ -13,10 +14,11 @@ export const CELL_SIZE = 30 * GAME_SCALE;
 /* The main class that creates a game object. This contains the main game structure and composes key classes for functionality. */
 export default class Game {
   // app
-  // TODO: make these private
+  // TODO: make these private except GameEvents
   public readonly app: Application<HTMLCanvasElement>;
   public readonly board: Container;
   public readonly controls: GameControls;
+  public readonly events: GameEvents;
 
   constructor(
     public readonly width = 10,
@@ -44,6 +46,7 @@ export default class Game {
     this.board = this.app.stage.addChild(new Container());
     boardDiv.appendChild(this.app.view);
     // initialize composite classes
+    this.events = new GameEvents(this);
     this.cells = this.makeCells(boardString);
     this.queue = new PieceQueue(this, queueDiv);
     this.hold = new PieceHold(this, holdDiv);
