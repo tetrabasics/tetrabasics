@@ -5,11 +5,11 @@ import { StaticMino } from './active-mino';
 import { Point } from '../structures';
 
 export default class PieceQueue {
-  private queueWindows: QueueWindow[];
+  private queueWindows: PieceWindow[];
   // TODO: private
   public queue: Iterator<MinoType, MinoType, undefined> = this.nextPiece();
   constructor(game: Game, private rootElement: HTMLElement, queueAmount = 5) {
-    this.queueWindows = Array.from({ length: queueAmount }, () => new QueueWindow(rootElement));
+    this.queueWindows = Array.from({ length: queueAmount }, () => new PieceWindow(rootElement));
     for (const window of this.queueWindows) {
       window.setPiece(this.queue.next().value);
     }
@@ -35,7 +35,7 @@ export default class PieceQueue {
 }
 
 // TODO: move to new file and call default, or remove the middleman class
-export class QueueWindow {
+export class PieceWindow {
   private app: Application<HTMLCanvasElement>;
   private staticMino: StaticMino;
   // TODO: use getter and setter without using getters and setters

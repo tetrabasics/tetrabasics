@@ -4,6 +4,7 @@ import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable,
 import BoardCell from './board-cell';
 import Game from './game';
 import PieceQueue from './queue';
+import PieceHold from './hold';
 
 // For piece queues, basically just minos that don't move at all
 export class StaticMino {
@@ -41,19 +42,20 @@ export default class ActiveMino extends StaticMino {
   // TODO: move active mino state into another class maybe
   private activeMinoType: MinoType = InvalidMinoType.NONE;
   private rotation = Direction.UP;
+  // TODO: contemplating moving this logic into PieceHold
+  private canHold = true;
 
   private readonly ghostCells = [
     new Sprite(BoardCell.getTexture(CellColor.NONE)),
     new Sprite(BoardCell.getTexture(CellColor.NONE)),
     new Sprite(BoardCell.getTexture(CellColor.NONE)),
     new Sprite(BoardCell.getTexture(CellColor.NONE))
-  ]
+    // TOOD: make the alpha not look awful
+  ].map(ghostCell => (ghostCell.alpha = 0.5, ghostCell));
 
-  constructor(private game: Game, private boardCells: HashMap<IPoint, BoardCell>, private pieceQueue: PieceQueue) {
+  constructor(private game: Game, private boardCells: HashMap<IPoint, BoardCell>, private pieceQueue: PieceQueue, private hold: PieceHold) {
     super(game.app);
     this.minoContainer.addChild(...this.ghostCells);
-    // TOOD: make the alpha not look awful
-    this.ghostCells.forEach(ghostCell => ghostCell.alpha = 0.5);
     // TODO: remove for testing
     this.generate(pieceQueue.next());
   }
@@ -102,10 +104,8 @@ export default class ActiveMino extends StaticMino {
         y--;
         iterations++;
       }
-
       return Math.min(lowestY, iterations);
     }, Infinity)
-    // console.log(shortestYDelta)
 
     for (let i = 0; i < this.cells.length; i++) {
       const point = this.cells[i].point;
@@ -162,7 +162,18 @@ export default class ActiveMino extends StaticMino {
     }
     // TODO: maybe check all lines if a row can be cleared? this might not be needed but it could help
     this.game.clearLines(new Set(this.cells.map(cell => cell.point.y)));
-    // TODO: this shows as any what the fuck
     this.generate(this.pieceQueue.next());
+    this.canHold = true;
+  }
+
+  public holdPiece() {
+    if (!this.canHold) return;
+    const nextPiece = this.hold.swapPiece(this.activeMinoType);
+    if (nextPiece == InvalidMinoType.NONE) {
+      this.generate(this.pieceQueue.next());
+      return;
+    }
+    this.generate(nextPiece);
+    this.canHold = false;
   }
 }

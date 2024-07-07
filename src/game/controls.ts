@@ -90,6 +90,9 @@ export default class GameControls {
       case Action.ROTATE_180:
         this.activeMino.rotate(2);
         break;
+      case Action.HOLD:
+        this.activeMino.holdPiece();
+        break;
     }
   }
 

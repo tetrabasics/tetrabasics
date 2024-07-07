@@ -1,6 +1,6 @@
 import { IPoint } from './structures';
 
-// this is numbered for skins to recognize the index of the texture
+// this is numbered for skins to recognize the index of the texture & non-numbered are filtered out
 export enum CellColor {
   RED = 0,
   ORANGE = 1,

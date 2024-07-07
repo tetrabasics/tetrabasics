@@ -5,6 +5,7 @@ import ActiveMino from './active-mino';
 import BoardCell from './board-cell';
 import GameControls from './controls';
 import PieceQueue from './queue';
+import PieceHold from './hold';
 
 export const GAME_SCALE = 1;
 export const CELL_SIZE = 30 * GAME_SCALE;
@@ -26,6 +27,9 @@ export default class Game {
     public readonly peekRows = 2
   ) {
     // TODO: group into one big div of class board
+    const holdDiv = document.createElement("div");
+    holdDiv.className = "board-hold";
+    rootElement.appendChild(holdDiv);
     const boardDiv = document.createElement("div");
     boardDiv.className = "board-main";
     rootElement.appendChild(boardDiv);
@@ -42,7 +46,8 @@ export default class Game {
     // initialize composite classes
     this.cells = this.makeCells(boardString);
     this.queue = new PieceQueue(this, queueDiv);
-    this.activeMino = new ActiveMino(this, this.cells, this.queue);
+    this.hold = new PieceHold(this, holdDiv);
+    this.activeMino = new ActiveMino(this, this.cells, this.queue, this.hold);
     this.controls = new GameControls(this, this.activeMino);
   }
 
@@ -69,6 +74,7 @@ export default class Game {
   private cells: HashMap<IPoint, BoardCell>;
   private activeMino: ActiveMino;
   private queue: PieceQueue;
+  private hold: PieceHold;
 
   // checks if a row needs to be cleared and clears it
   public clearLines(rows: Iterable<number>) {
