@@ -48,9 +48,13 @@ export default class GameControls {
     this.pressedKeys.add(event.key);
     const action = this.controls.get(event.key);
     if (action === undefined) return;
+    this.executeAction(action);
+  }
+
+  public executeAction(action: Action) {
     // TODO: encapsulate DAS/ARR/SDF numbers
     const DAS = 130, ARR = 10, SDF: number = 40;
-    // TODO: handle inputs with timing events
+    // TODO: maybe don't handle inputs with timing events
     switch (action) {
       case Action.MOVE_LEFT:
         if (this.shiftTimeout) clearInterval(this.shiftTimeout);
@@ -105,7 +109,7 @@ export default class GameControls {
     }
     if (this.shiftTimeout &&
       ((action == Action.MOVE_LEFT && this.shiftDirection == Direction.LEFT) ||
-      (action == Action.MOVE_RIGHT && this.shiftDirection == Direction.RIGHT))) {
+        (action == Action.MOVE_RIGHT && this.shiftDirection == Direction.RIGHT))) {
       clearInterval(this.shiftTimeout);
       this.shiftTimeout = null;
     }
