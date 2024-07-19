@@ -2,7 +2,7 @@ import { Application, Container } from 'pixi.js';
 import { HashMap, IPoint, Point } from '../structures';
 import { fenNameToColor, CellColor, MinoType, ValidMinoType } from '../types';
 import ActiveMino from './active-mino';
-import BoardCell from './board-cell';
+import BoardCell, { BoardCellData } from './board-cell';
 import GameControls from './controls';
 import PieceQueue from './queue';
 import PieceHold from './hold';
@@ -81,32 +81,47 @@ export default class Game {
 
   // checks if a row needs to be cleared and clears it
   public clearLines(rows: Iterable<number>) {
-    // TODO: since i'm using a hashmap for cells, clearing rows is decently intensive so i need to find a better solution (~1ms is subjective)
-    const clearingRows = new Set([...rows].filter(row => this.rowIsFilled(row)));
+    // TODO: since i'm using a hashmap for cells, clearing rows is decently intensive so i might need to find a better solution
+    const clearingRows = new Set([...rows].filter(row => [...this.rowIterator(row)].every(cell => cell.isSolid())));
     // rowOffset declares how many rows below this one are currently being cleared
     for (let row = 0, rowOffset = 0; row < this.height; row++) {
       if (!rowOffset && !clearingRows.has(row)) continue;
       if (clearingRows.has(row)) {
-        // TODO: could maybe abstract this code to loop over all cells in a row?
-        for (let x = 0; x < this.width; x++) {
-          this.cells.get({ x, y: row })!.Color = CellColor.NONE;
+        for (const cell of this.rowIterator(row)) { 
+          cell.Color = CellColor.NONE;
         }
         rowOffset++;
       } else {
         // swap rows here (only swapping color because that's the only value that i really need)
         for (let x = 0; x < this.width; x++) {
           const currentCell = this.cells.get({ x, y: row - rowOffset })!, lowerCell = this.cells.get({ x, y: row })!;
-          // TODO: when adding board cell metadata, update this too
           [currentCell.Color, lowerCell.Color] = [lowerCell.Color, currentCell.Color];
+          [currentCell.metadata, lowerCell.metadata] = [lowerCell.metadata, currentCell.metadata];
         }
       }
     }
   }
 
-  private rowIsFilled(row: number) {
+  // functions to iterate through rows and columns to make it easier
+  private *rowIterator(y: number) {
+    if (y < 0 || y >= this.height) return;
     for (let x = 0; x < this.width; x++) {
-      if (!this.cells.get({ x, y: row })!.isSolid()) return false;
+      yield this.cells.get({ x, y })!;
     }
-    return true;
+  }
+  private *colIterator(x: number) {
+    if (x < 0 || x >= this.width) return;
+    for (let y = 0; y < this.width; y++) {
+      yield this.cells.get({ x, y })!;
+    }
+  }
+
+  // TODO: this is a copy of the map so use toData in event listeners to not have to run this all the time
+  public getBoard(): HashMap<IPoint, BoardCellData> {
+    const map = new HashMap<IPoint, BoardCellData>(({ x, y }) => `${x},${y}`);
+    for (const [point, boardCell] of this.cells.entries()) {
+      map.set(point, boardCell.toData());
+    }
+    return map;
   }
 }

@@ -6,10 +6,11 @@ import Game from './game'
 // TODO: implement GameEvent emits throughout the program
 type Event = ActionEvent;
 type ActionEvent = {
-  move: { point: IPoint }
-  piecePlaced: { point: IPoint, type: MinoType }
+  move: { origin: IPoint }
+  piecePlaced: { origin: IPoint, type: MinoType }
 }
 
+// The central for game events and fires off to observers when those events are emitted.
 export default class GameEvents {
   constructor(private game: Game) { }
   private observers: Partial<{
@@ -34,5 +35,15 @@ export default class GameEvents {
 
   public emit<K extends keyof Event>(eventName: K, args: Event[K]) {
     this.observers[eventName]?.forEach(observer => observer(args));
+  }
+
+  public awaitEvent<K extends keyof Event>(eventName: K): Promise<Event[K]> {
+    return new Promise(resolve => {
+      const callback = (args: Event[K]) => {
+        this.remove(eventName, callback);
+        resolve(args);
+      }
+      this.add(eventName, callback);
+    })
   }
 }

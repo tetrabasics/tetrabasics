@@ -1,14 +1,26 @@
 import { Sprite, Container, Texture, BaseTexture, Rectangle, SCALE_MODES, Application } from 'pixi.js';
 import { CellColor } from '../types';
-import Game, { CELL_SIZE, GAME_SCALE } from './game';
+import Game, { CELL_SIZE } from './game';
 import { IPoint, Point } from '../structures';
 // TODO: dynamic import for textures
 import grid from '/skin/gloss.png'
 import loss from '/board/empty.png'
 
+export interface BoardCellData {
+  color: CellColor
+  isSolid: boolean
+  metadata: Metadata
+}
+
+// other data that a board cell might need to keep track of
+export type Metadata = Partial<{
+  isGlowing: boolean // TODO: make cells glow if this is true
+}> | null;
+
 export default class BoardCell {
   public sprite: Sprite | null = null;
   // TODO: maybe using getters and setters isn't the best idea
+  public metadata: Metadata = null; // TODO: do i need to make this private? probably not
   public isSolid = () => this.color != CellColor.NONE;
   get Color() { return this.color; }
   set Color(color: CellColor) {
@@ -26,6 +38,15 @@ export default class BoardCell {
     this.Color = color;
     game.board.addChild(this.sprite);
     BoardCell.setCellCoordinates(game.app, this.sprite, point);
+  }
+
+  // TODO: i need a better name for this
+  public toData(): BoardCellData {
+    return {
+      color: this.color,
+      isSolid: this.isSolid(),
+      metadata: { ...this.metadata } // TODO: deep copy this maybe
+    };
   }
 
   // TODO: make this available to some classes by export
