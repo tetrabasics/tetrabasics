@@ -87,7 +87,7 @@ export default class Game {
     for (let row = 0, rowOffset = 0; row < this.height; row++) {
       if (!rowOffset && !clearingRows.has(row)) continue;
       if (clearingRows.has(row)) {
-        for (const cell of this.rowIterator(row)) { 
+        for (const cell of this.rowIterator(row)) {
           cell.Color = CellColor.NONE;
         }
         rowOffset++;
@@ -116,6 +116,7 @@ export default class Game {
     }
   }
 
+  // these methods are for the end user to view
   // TODO: this is a copy of the map so use toData in event listeners to not have to run this all the time
   public getBoard(): HashMap<IPoint, BoardCellData> {
     const map = new HashMap<IPoint, BoardCellData>(({ x, y }) => `${x},${y}`);
@@ -123,5 +124,9 @@ export default class Game {
       map.set(point, boardCell.toData());
     }
     return map;
+  }
+
+  public getCell(point: IPoint): BoardCellData {
+    return this.cells.get(point)!.toData();
   }
 }

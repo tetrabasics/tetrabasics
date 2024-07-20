@@ -47,6 +47,7 @@ export class Point implements IPoint {
     [Direction.RIGHT]: { x: 1, y: 0 }
   }
 
+  // TODO: i dont get overload constructors man
   constructor()
   constructor(point: IPoint);
   constructor(x: number, y: number);

@@ -17,6 +17,7 @@ export enum Action {
 
 /* Handles behavior from the player and the lesson planner for interaction with the board. */
 export default class GameControls {
+  private isPaused = false;
   // TODO: make this changeable by browsers
   // TODO: maybe replace bidirectional map import, it's not super needed
   private controls: BiMap<Action> = new BiMap({
@@ -52,6 +53,7 @@ export default class GameControls {
   }
 
   public executeAction(action: Action) {
+    if (this.isPaused) return;
     // TODO: encapsulate DAS/ARR/SDF numbers
     const DAS = 130, ARR = 10, SDF: number = 40;
     // TODO: maybe don't handle inputs with timing events
@@ -117,5 +119,12 @@ export default class GameControls {
 
   public isPressed(action: Action) {
     return this.pressedKeys.has(this.controls.getKey(action) ?? "");
+  }
+
+  public pause() {
+    this.isPaused = true;
+  }
+  public play() {
+    this.isPaused = false;
   }
 }

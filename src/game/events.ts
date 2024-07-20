@@ -1,5 +1,6 @@
 import { IPoint } from '../structures'
 import { MinoType } from '../types';
+import { BoardCellData } from './board-cell';
 import Game from './game'
 
 // TODO: fill in potential events to fire
@@ -8,6 +9,7 @@ type Event = ActionEvent;
 type ActionEvent = {
   move: { origin: IPoint }
   piecePlaced: { origin: IPoint, type: MinoType }
+  linesCleared: { rows: BoardCellData[] }
 }
 
 // The central for game events and fires off to observers when those events are emitted.
@@ -28,9 +30,9 @@ export default class GameEvents {
 
   public remove<K extends keyof Event>(eventName: K, callback: (args: Event[K]) => void): boolean {
     if (!this.observers[eventName]) return false;
-    const deleted = this.observers[eventName].delete(callback);
-    if (deleted && !this.observers[eventName].size) delete this.observers[eventName];
-    return deleted;
+    const isDeleted = this.observers[eventName].delete(callback);
+    if (isDeleted && !this.observers[eventName].size) delete this.observers[eventName];
+    return isDeleted;
   }
 
   public emit<K extends keyof Event>(eventName: K, args: Event[K]) {
