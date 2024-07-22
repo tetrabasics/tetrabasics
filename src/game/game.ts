@@ -9,7 +9,7 @@ import PieceHold from './hold';
 import GameEvents from './events';
 
 export const GAME_SCALE = 1;
-export const CELL_SIZE = 30 * GAME_SCALE;
+export const CELL_SIZE = 30;
 
 /* The main class that creates a game object. This contains the main game structure and composes key classes for functionality. */
 export default class Game {
@@ -28,7 +28,8 @@ export default class Game {
     rootElement: HTMLElement = document.getElementById("board")!,
     public readonly peekRows = 2
   ) {
-    // TODO: group into one big div of class board
+    // TODO: start the game paused
+    // game components
     const holdDiv = document.createElement("div");
     holdDiv.className = "board-hold";
     rootElement.appendChild(holdDiv);
@@ -40,9 +41,10 @@ export default class Game {
     rootElement.appendChild(queueDiv);
 
     this.app = new Application<HTMLCanvasElement>({
-      width: width * CELL_SIZE,
-      height: ((height / 2) + peekRows) * CELL_SIZE
+      width: width * CELL_SIZE * GAME_SCALE,
+      height: ((height / 2) + peekRows) * CELL_SIZE * GAME_SCALE
     });
+    this.app.stage.scale = { x: GAME_SCALE, y: GAME_SCALE };
     this.board = this.app.stage.addChild(new Container());
     boardDiv.appendChild(this.app.view);
     // initialize composite classes

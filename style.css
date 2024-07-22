@@ -1,18 +1,38 @@
 @media (prefers-color-scheme: dark) {
   :root {
     background-color: #111;
+    color: white;
   }
 }
 
 /* Board Styling */
 #board {
   display: flex;
-  /* TODO: set max height to board and not queue */
-  height: 660px;
 }
 .board-queue {
   /* max-height: 100%; */
   display: flex;
   flex-direction: column;
-  /* flex-wrap: wrap; */
+  flex-wrap: wrap;
+}
+
+#game, #text {
+  border: 5px solid black;
+  margin: 2px;
+}
+
+#game {
+  display: flex;
+  justify-content: center;
+  flex: 0 1 auto;
+}
+
+#text {
+  flex: 1;
+  display: grid;
+  place-items: center;
+}
+
+body {
+  display: flex;
 }

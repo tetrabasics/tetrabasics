@@ -1,6 +1,6 @@
 import { Sprite, Container, Texture, BaseTexture, Rectangle, SCALE_MODES, Application } from 'pixi.js';
 import { CellColor } from '../types';
-import Game, { CELL_SIZE } from './game';
+import Game, { CELL_SIZE, GAME_SCALE } from './game';
 import { IPoint, Point } from '../structures';
 // TODO: dynamic import for textures
 import grid from '/skin/gloss.png'
@@ -53,7 +53,7 @@ export default class BoardCell {
   public static setCellCoordinates(app: Application, container: Container, point: IPoint) {
     // If the board displays incorrectly, this is the code to change
     container.x = point.x * CELL_SIZE;
-    container.y = app.renderer.height - (point.y + 1) * CELL_SIZE;
+    container.y = app.renderer.height / app.stage.scale.y - (point.y + 1) * CELL_SIZE;
   }
 
   // TODO: make this available to modules via export

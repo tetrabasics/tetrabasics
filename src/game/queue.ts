@@ -1,15 +1,16 @@
 import { Application } from 'pixi.js';
 import { InvalidMinoType, MinoType, ValidMinoType, minoToData } from '../types';
-import Game, { CELL_SIZE } from './game';
+import Game, { CELL_SIZE, GAME_SCALE } from './game';
 import { StaticMino } from './active-mino';
 import { Point } from '../structures';
 
+const QUEUE_SIZE = 0.75;
 export default class PieceQueue {
   private queueWindows: PieceWindow[];
   // TODO: private
   public queue: Iterator<MinoType, MinoType, undefined> = this.nextPiece();
   constructor(game: Game, private rootElement: HTMLElement, queueAmount = 5) {
-    this.queueWindows = Array.from({ length: queueAmount }, () => new PieceWindow(rootElement));
+    this.queueWindows = Array.from({ length: queueAmount }, () => new PieceWindow(rootElement, QUEUE_SIZE * GAME_SCALE));
     for (const window of this.queueWindows) {
       window.setPiece(this.queue.next().value);
     }
@@ -40,11 +41,12 @@ export class PieceWindow {
   private staticMino: StaticMino;
   // TODO: use getter and setter without using getters and setters
   public currentMino: MinoType = InvalidMinoType.NONE;
-  constructor(rootElement: HTMLElement) {
+  constructor(rootElement: HTMLElement, scale = 1) {
     this.app = new Application<HTMLCanvasElement>({
-      width: 5 * CELL_SIZE,
-      height: 5 * CELL_SIZE
+      width: 5 * CELL_SIZE * scale,
+      height: 5 * CELL_SIZE * scale
     });
+    this.app.stage.scale = { x: scale, y: scale };
     this.staticMino = new StaticMino(this.app);
     rootElement.appendChild(this.app.view);
   }

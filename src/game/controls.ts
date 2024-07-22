@@ -55,35 +55,39 @@ export default class GameControls {
   public executeAction(action: Action) {
     if (this.isPaused) return;
     // TODO: encapsulate DAS/ARR/SDF numbers
-    const DAS = 130, ARR = 10, SDF: number = 40;
+    const DAS = 130, ARR = 10, SDF = -1;
     // TODO: maybe don't handle inputs with timing events
     switch (action) {
+      // garbage code i threw from an old project
       case Action.MOVE_LEFT:
-        if (this.shiftTimeout) clearInterval(this.shiftTimeout);
-        this.shiftDirection = Direction.LEFT;
+        if (this.controlEvents.onLeft.das) return;
+        this.clearShiftRepeat(this.controlEvents.onLeft);
+        this.clearShiftRepeat(this.controlEvents.onRight);
         this.activeMino.move(Direction.LEFT);
-        this.shiftTimeout = setTimeout(() => {
+        this.controlEvents.onLeft.das = setTimeout(() => {
           this.activeMino.move(Direction.LEFT);
           if (!ARR) while (this.activeMino.move(Direction.LEFT));
-          this.shiftTimeout = setInterval(() => this.activeMino.move(Direction.LEFT), ARR);
+          this.controlEvents.onLeft.delay = setInterval(() => !this.isPaused && this.activeMino.move(Direction.LEFT), ARR);
         }, DAS);
         break;
       case Action.MOVE_RIGHT:
-        if (this.shiftTimeout) clearInterval(this.shiftTimeout);
-        this.shiftDirection = Direction.RIGHT;
+        if (this.controlEvents.onRight.das) return;
+        this.clearShiftRepeat(this.controlEvents.onLeft);
+        this.clearShiftRepeat(this.controlEvents.onRight);
         this.activeMino.move(Direction.RIGHT);
-        this.shiftTimeout = setTimeout(() => {
+        this.controlEvents.onRight.das = setTimeout(() => {
           this.activeMino.move(Direction.RIGHT);
           if (!ARR) while (this.activeMino.move(Direction.RIGHT));
-          this.shiftTimeout = setInterval(() => this.activeMino.move(Direction.RIGHT), ARR);
+          this.controlEvents.onRight.delay = setInterval(() => !this.isPaused && this.activeMino.move(Direction.RIGHT), ARR);
         }, DAS);
         break;
       case Action.SOFT_DROP:
-        if (this.softDropTimeout) return;
+        if (this.controlEvents.down) return;
         this.activeMino.move(Direction.DOWN);
-        if (SDF == -1) this.softDropTimeout = setInterval(() => this.activeMino.move(Direction.DOWN), 0);
-        else this.softDropTimeout = setInterval(() => this.activeMino.move(Direction.DOWN), 500 / SDF);
+        if (SDF != -1) this.controlEvents.down = setInterval(() => !this.isPaused && this.activeMino.move(Direction.DOWN), 500 / SDF);
+        else this.controlEvents.down = setInterval(() => !this.isPaused && this.activeMino.move(Direction.DOWN), 0);
         break;
+      // end of garbage
       case Action.HARD_DROP:
         this.activeMino.place();
         break;
@@ -101,6 +105,22 @@ export default class GameControls {
         break;
     }
   }
+  private controlEvents: {
+    onLeft: { das: number | null, delay: number | null },
+    onRight: { das: number | null, delay: number | null },
+    down: number | null
+  } = { onLeft: { das: null, delay: null }, onRight: { das: null, delay: null }, down: null }
+
+  private clearShiftRepeat(eventDirection: { das: number | null, delay: number | null }) {
+    if (eventDirection.das) {
+      clearTimeout(eventDirection.das);
+      eventDirection.das = null;
+    }
+    if (eventDirection.delay) {
+      clearTimeout(eventDirection.delay);
+      eventDirection.delay = null;
+    }
+  }
 
   private keyUp(event: KeyboardEvent) {
     this.pressedKeys.delete(event.key);
@@ -114,6 +134,13 @@ export default class GameControls {
         (action == Action.MOVE_RIGHT && this.shiftDirection == Direction.RIGHT))) {
       clearInterval(this.shiftTimeout);
       this.shiftTimeout = null;
+    }
+    // garbage code i threw from an old project
+    if (action == Action.MOVE_LEFT) this.clearShiftRepeat(this.controlEvents.onLeft);
+    if (action == Action.MOVE_RIGHT) this.clearShiftRepeat(this.controlEvents.onRight);
+    if (action == Action.SOFT_DROP) {
+      if (this.controlEvents.down) clearInterval(this.controlEvents.down);
+      this.controlEvents.down = null;
     }
   }
 
