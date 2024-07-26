@@ -1,15 +1,18 @@
 import { IPoint } from '../structures'
 import { MinoType } from '../types';
-import { BoardCellData } from './board-cell';
+import { CellData } from './cell';
 import Game from './game'
 
 // TODO: fill in potential events to fire
 // TODO: implement GameEvent emits throughout the program
-type Event = ActionEvent;
+type Event = ActionEvent | MiscEvent;
 type ActionEvent = {
   move: { origin: IPoint }
   piecePlaced: { origin: IPoint, type: MinoType }
-  linesCleared: { rows: BoardCellData[] }
+  linesCleared: { rows: CellData[] }
+}
+type MiscEvent = {
+  gameOver: undefined
 }
 
 // The central for game events and fires off to observers when those events are emitted.

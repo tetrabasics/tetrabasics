@@ -17,7 +17,6 @@ export enum Action {
 
 /* Handles behavior from the player and the lesson planner for interaction with the board. */
 export default class GameControls {
-  private isPaused = false;
   // TODO: make this changeable by browsers
   // TODO: maybe replace bidirectional map import, it's not super needed
   private controls: BiMap<Action> = new BiMap({
@@ -33,7 +32,7 @@ export default class GameControls {
   });
   private pressedKeys = new Set<string>();
   // for calculating delta
-  constructor(game: Game, private activeMino: ActiveMino) {
+  constructor(private game: Game, private activeMino: ActiveMino) {
     // TODO: maybe change the body to a smaller focus window (Game rootElement constructor)
     document.body.onkeydown = event => this.keyDown(event);
     document.body.onkeyup = event => this.keyUp(event);
@@ -53,9 +52,9 @@ export default class GameControls {
   }
 
   public executeAction(action: Action) {
-    if (this.isPaused) return;
+    if (this.game.isPaused()) return;
     // TODO: encapsulate DAS/ARR/SDF numbers
-    const DAS = 130, ARR = 10, SDF = -1;
+    const DAS = 130, ARR = 0, SDF = -1;
     // TODO: maybe don't handle inputs with timing events
     switch (action) {
       // garbage code i threw from an old project
@@ -67,7 +66,7 @@ export default class GameControls {
         this.controlEvents.onLeft.das = setTimeout(() => {
           this.activeMino.move(Direction.LEFT);
           if (!ARR) while (this.activeMino.move(Direction.LEFT));
-          this.controlEvents.onLeft.delay = setInterval(() => !this.isPaused && this.activeMino.move(Direction.LEFT), ARR);
+          this.controlEvents.onLeft.delay = setInterval(() => !this.game.isPaused() && this.activeMino.move(Direction.LEFT), ARR);
         }, DAS);
         break;
       case Action.MOVE_RIGHT:
@@ -78,14 +77,14 @@ export default class GameControls {
         this.controlEvents.onRight.das = setTimeout(() => {
           this.activeMino.move(Direction.RIGHT);
           if (!ARR) while (this.activeMino.move(Direction.RIGHT));
-          this.controlEvents.onRight.delay = setInterval(() => !this.isPaused && this.activeMino.move(Direction.RIGHT), ARR);
+          this.controlEvents.onRight.delay = setInterval(() => !this.game.isPaused() && this.activeMino.move(Direction.RIGHT), ARR);
         }, DAS);
         break;
       case Action.SOFT_DROP:
         if (this.controlEvents.down) return;
         this.activeMino.move(Direction.DOWN);
-        if (SDF != -1) this.controlEvents.down = setInterval(() => !this.isPaused && this.activeMino.move(Direction.DOWN), 500 / SDF);
-        else this.controlEvents.down = setInterval(() => !this.isPaused && this.activeMino.move(Direction.DOWN), 0);
+        if (SDF != -1) this.controlEvents.down = setInterval(() => !this.game.isPaused() && this.activeMino.move(Direction.DOWN), 500 / SDF);
+        else this.controlEvents.down = setInterval(() => !this.game.isPaused() && this.activeMino.move(Direction.DOWN), 0);
         break;
       // end of garbage
       case Action.HARD_DROP:
@@ -146,12 +145,5 @@ export default class GameControls {
 
   public isPressed(action: Action) {
     return this.pressedKeys.has(this.controls.getKey(action) ?? "");
-  }
-
-  public pause() {
-    this.isPaused = true;
-  }
-  public play() {
-    this.isPaused = false;
   }
 }

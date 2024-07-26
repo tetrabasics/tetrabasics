@@ -5,8 +5,9 @@ import { IPoint, Point } from '../structures';
 // TODO: dynamic import for textures
 import grid from '/skin/gloss.png'
 import loss from '/board/empty.png'
+import Board from './board';
 
-export interface BoardCellData {
+export interface CellData {
   color: CellColor
   isSolid: boolean
   metadata: Metadata
@@ -17,18 +18,19 @@ export type Metadata = Partial<{
   isGlowing: boolean // TODO: make cells glow if this is true
 }> | null;
 
-export default class BoardCell {
+export default class Cell {
   public sprite: Sprite | null = null;
   // TODO: maybe using getters and setters isn't the best idea
   public metadata: Metadata = null; // TODO: do i need to make this private? probably not
   public isSolid = () => this.color != CellColor.NONE;
   get Color() { return this.color; }
   set Color(color: CellColor) {
-    if (this.sprite) this.sprite.texture = BoardCell.getTexture(color != CellColor.NONE ? color : null);
+    if (this.sprite) this.sprite.texture = Cell.getTexture(color != CellColor.NONE ? color : null);
     this.color = color;
   }
   constructor(
-    game: Game,
+    board: Board,
+    app: Application<HTMLCanvasElement>,
     public point: Point,
     private color = CellColor.NONE,
     isVisible = true
@@ -36,12 +38,12 @@ export default class BoardCell {
     if (!isVisible) return;
     this.sprite = new Sprite();
     this.Color = color;
-    game.board.addChild(this.sprite);
-    BoardCell.setCellCoordinates(game.app, this.sprite, point);
+    board.container.addChild(this.sprite);
+    Cell.setCellCoordinates(app, this.sprite, point);
   }
 
   // TODO: i need a better name for this
-  public toData(): BoardCellData {
+  public toData(): CellData {
     return {
       color: this.color,
       isSolid: this.isSolid(),
@@ -63,5 +65,11 @@ export default class BoardCell {
         new Texture(BaseTexture.from(grid), new Rectangle(31 * color, 0, CELL_SIZE, CELL_SIZE));
     texture.baseTexture.scaleMode = SCALE_MODES.NEAREST;
     return texture;
+  }
+
+  // swaps the states of two cells without changing references 
+  public swap(otherCell: Cell) {
+    [this.Color, otherCell.Color] = [otherCell.Color, this.Color];
+    [this.metadata, otherCell.metadata] = [otherCell.metadata, this.metadata];
   }
 }

@@ -9,9 +9,9 @@ export default async function eternalExercise() {
 
 async function writeText(text: string, textSpeed = 1) {
   const textBox = document.getElementById("text")!;
-  textBox.innerText = "";
+  textBox.textContent = "";
   for (const char of text) {
-    textBox.innerText += char;
+    textBox.textContent += char;
     await new Promise<void>(r => setTimeout(r, 50 * textSpeed));
   }
   // TODO: add continue button of some kind that triggers on space or some shit

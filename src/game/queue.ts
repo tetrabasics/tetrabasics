@@ -7,9 +7,20 @@ import { Point } from '../structures';
 const QUEUE_SIZE = 0.75;
 export default class PieceQueue {
   private queueWindows: PieceWindow[];
-  // TODO: private
   public queue: Iterator<MinoType, MinoType, undefined> = this.nextPiece();
-  constructor(game: Game, private rootElement: HTMLElement, queueAmount = 5) {
+  // TODO: private
+  constructor(
+    game: Game,
+    rootElement: HTMLElement,
+    queueString?: string,
+    queueAmount = 5,
+  ) {
+    if (queueString) {
+      const validMinos = Object.values(ValidMinoType).join("");
+      // enum validation for string, too lazy to split and use a type guard
+      if (!new RegExp(`^[${validMinos}]+$`).test(queueString)) throw new Error();
+      this.queue = (queueString.split("") as MinoType[]).values();
+    }
     this.queueWindows = Array.from({ length: queueAmount }, () => new PieceWindow(rootElement, QUEUE_SIZE * GAME_SCALE));
     for (const window of this.queueWindows) {
       window.setPiece(this.queue.next().value);
@@ -21,7 +32,7 @@ export default class PieceQueue {
     for (let i = 0; i < this.queueWindows.length - 1; i++) {
       this.queueWindows[i].setPiece(this.queueWindows[i + 1].currentMino);
     }
-    this.queueWindows.at(-1)!.setPiece(this.queue.next().value);
+    this.queueWindows.at(-1)!.setPiece(this.queue.next().value ?? InvalidMinoType.NONE);
     return next;
   }
 

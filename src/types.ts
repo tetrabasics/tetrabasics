@@ -1,5 +1,15 @@
 import { IPoint } from './structures';
 
+export enum PauseType {
+  OFF,
+  USER_PAUSE,
+  GAME_PAUSE,
+  UNFOCUSED,
+  GAME_OVER
+}
+
+// TETROBOS RELATED THINGS
+
 // this is numbered for skins to recognize the index of the texture & non-numbered are filtered out
 export enum CellColor {
   RED = 0,

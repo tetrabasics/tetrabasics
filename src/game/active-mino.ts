@@ -1,10 +1,11 @@
 import { Application, Container, Sprite } from 'pixi.js';
-import { HashMap, IPoint, Point } from '../structures';
-import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable, mainKickTable, flipKickTable, ValidMinoType, InvalidMinoType } from '../types';
-import BoardCell from './board-cell';
+import { Point } from '../structures';
+import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable, mainKickTable, flipKickTable, ValidMinoType, InvalidMinoType, PauseType } from '../types';
+import BoardCell from './cell';
 import Game from './game';
 import PieceQueue from './queue';
 import PieceHold from './hold';
+import Board from './board';
 
 // For piece queues, basically just minos that don't move at all
 export class StaticMino {
@@ -26,6 +27,12 @@ export class StaticMino {
 
   // TODO: remove thing for invalid minos
   public assemble(minoType: MinoType, origin: Point) {
+    if (minoType == InvalidMinoType.NONE) {
+      for (const cell of this.cells) {
+        cell.sprite.texture = BoardCell.getTexture(CellColor.NONE);
+      }
+      return;
+    }
     // TODO: destroy current mino if it exists already
     this.origin = origin.delta(minoToData[minoType].cursorOffset);
     for (let i = 0; i < this.cells.length; i++) {
@@ -53,7 +60,7 @@ export default class ActiveMino extends StaticMino {
     // TOOD: make the alpha not look awful
   ].map(ghostCell => (ghostCell.alpha = 0.5, ghostCell));
 
-  constructor(private game: Game, private boardCells: HashMap<IPoint, BoardCell>, private pieceQueue: PieceQueue, private hold: PieceHold) {
+  constructor(private game: Game, private board: Board, private pieceQueue: PieceQueue, private hold: PieceHold) {
     super(game.app);
     this.minoContainer.addChild(...this.ghostCells);
     // TODO: remove for testing
@@ -68,7 +75,7 @@ export default class ActiveMino extends StaticMino {
       ghostCell.texture = BoardCell.getTexture(fenNameToColor[minoType]);
     }
     if (!this.displace(point => point)) {
-      console.log("game over")
+      this.game.pause(PauseType.GAME_OVER)
       // TODO: supply game over logic
       return;
     }
@@ -82,10 +89,10 @@ export default class ActiveMino extends StaticMino {
     return true;
   }
 
-  // displaces all points of the active mino, NOT moving the origin in the process. Returns if successful.
+  // displaces all points of the active mino, NOT moving the origin in the process. returns if successful.
   private displace(movingTo: (point: Point) => Point): boolean {
     if (!this.cells.every(({ point }) => {
-      const nextCell = this.boardCells.get(movingTo(point));
+      const nextCell = this.board.get(movingTo(point));
       return nextCell && !nextCell.isSolid();
     })) return false;
 
@@ -99,7 +106,7 @@ export default class ActiveMino extends StaticMino {
     const shortestYDelta = this.cells.reduce((lowestY, { point: { x, y } }) => {
       let iterations = -1;
       while (true) {
-        const nextCell = this.boardCells.get({ x, y });
+        const nextCell = this.board.get({ x, y });
         if ((nextCell && nextCell?.isSolid()) || y < 0) break;
         y--;
         iterations++;
@@ -151,17 +158,16 @@ export default class ActiveMino extends StaticMino {
       return;
     }
     this.origin = this.origin.delta(tableAttempt);
-    // TODO: idk i think there might need to be more code i'm just not sure what
   }
 
   public place() {
     // TODO: make this hard drop and move it somewhere else
     while (this.move(Direction.DOWN));
     for (const { point } of this.cells) {
-      this.boardCells.get(point)!.Color = minoToData[this.activeMinoType].color;
+      this.board.get(point)!.Color = minoToData[this.activeMinoType].color;
     }
     // TODO: maybe check all lines if a row can be cleared? this might not be needed but it could help
-    this.game.clearLines(new Set(this.cells.map(cell => cell.point.y)));
+    this.board.clearLines(new Set(this.cells.map(cell => cell.point.y)));
     this.generate(this.pieceQueue.next());
     this.canHold = true;
   }
