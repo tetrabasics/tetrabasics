@@ -26,15 +26,12 @@ export default class Game {
     public readonly height = 40,
     // TODO: make options object
     boardString?: string,
-    rootElement: HTMLElement = document.getElementById("board")!,
+    private rootElement: HTMLElement = document.getElementById("board")!,
     public readonly peekRows = 2
   ) {
     // TODO: start the game paused
     // game components
     const { holdDiv, boardDiv, queueDiv } = this.createComponents(rootElement);
-
-    // handling board string
-    const [cellString, queueString] = boardString?.split("?") ?? [];
 
     this.app = new Application<HTMLCanvasElement>({
       width: width * CELL_SIZE * GAME_SCALE,
@@ -45,11 +42,16 @@ export default class Game {
 
     // initialize composite classes
     this.events = new GameEvents(this);
-    this.queue = new PieceQueue(this, queueDiv, queueString);
-    this.board = new Board(this, this.app, this.queue, cellString);
+    this.queue = new PieceQueue(this, queueDiv);
+    this.board = new Board(this, this.app, this.queue);
     this.hold = new PieceHold(this, holdDiv);
     this.activeMino = new ActiveMino(this, this.board, this.queue, this.hold);
     this.controls = new GameControls(this, this.activeMino);
+
+    // handling board string
+    const [cellString, queueString] = boardString?.split("?") ?? [];
+    this.setGameState({ cellString, queueString });
+    
     this.pause(PauseType.OFF);
   }
 
@@ -78,8 +80,35 @@ export default class Game {
   public play = () => this.pause(PauseType.OFF);
   public pause(pauseType = PauseType.GAME_PAUSE) {
     // can't resume if the game is over
-    if (pauseType == PauseType.OFF && this.pauseType == PauseType.GAME_OVER) return;
+    if (this.pauseType == PauseType.GAME_OVER) return;
     this.pauseType = pauseType;
+    if (pauseType == PauseType.GAME_OVER) {
+      this.board.gameOver();
+      this.activeMino.gameOver();
+    }
     // TODO: additional pause shenanigans go here
   }
+
+  // for setting up the game to start playing, use when resetting
+  public reset = () => this.setGameState();
+  public setGameState({ cellString, queueString }: Partial<GameStateOptions> = {}) {
+    this.pause(PauseType.GAME_PAUSE);
+    this.board.setCellsFromString(cellString);
+    this.queue.setQueue(queueString);
+    this.hold.empty();
+    this.activeMino.generate(this.queue.next());
+    this.pause(PauseType.OFF);
+  }
+
+  // TODO: this is called from board when lines are injected, so this is an intermediate function.
+  // if i can get board and active mino to cross-reference each other, i can remove this
+  public updateMino() {
+    this.activeMino.displace(point => point)
+  }
+}
+
+// TODO: put this at the top im too lazy
+interface GameStateOptions {
+  cellString: string
+  queueString: string
 }

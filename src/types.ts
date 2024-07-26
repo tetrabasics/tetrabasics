@@ -52,7 +52,8 @@ export const fenNameToColor: Record<MinoType | string, CellColor> = {
   o: CellColor.YELLOW,
   j: CellColor.BLUE,
   _: CellColor.NONE,
-  "#": CellColor.GARBAGE
+  "#": CellColor.GARBAGE,
+  "$": CellColor.UNBLOCKABLE
 };
 
 // this is numbered for cw/ccw rotation to be addition/subtraction

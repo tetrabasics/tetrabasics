@@ -1,11 +1,11 @@
 import { Application, Container, Sprite } from 'pixi.js';
 import { Point } from '../structures';
 import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable, mainKickTable, flipKickTable, ValidMinoType, InvalidMinoType, PauseType } from '../types';
-import BoardCell from './cell';
 import Game from './game';
 import PieceQueue from './queue';
 import PieceHold from './hold';
 import Board from './board';
+import Cell from './cell';
 
 // For piece queues, basically just minos that don't move at all
 export class StaticMino {
@@ -19,17 +19,17 @@ export class StaticMino {
 
   // this is a tuple because if i need to access i'm iterating over each one and not individual lookup
   protected readonly cells = [
-    { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
-    { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
-    { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) },
-    { point: new Point(), sprite: new Sprite(BoardCell.getTexture(CellColor.NONE)) }
+    { point: new Point(), sprite: new Sprite(Cell.getTexture(CellColor.NONE)) },
+    { point: new Point(), sprite: new Sprite(Cell.getTexture(CellColor.NONE)) },
+    { point: new Point(), sprite: new Sprite(Cell.getTexture(CellColor.NONE)) },
+    { point: new Point(), sprite: new Sprite(Cell.getTexture(CellColor.NONE)) }
   ];
 
   // TODO: remove thing for invalid minos
-  public assemble(minoType: MinoType, origin: Point) {
+  public assemble(minoType: MinoType, origin: Point, colorOverride?: CellColor) {
     if (minoType == InvalidMinoType.NONE) {
       for (const cell of this.cells) {
-        cell.sprite.texture = BoardCell.getTexture(CellColor.NONE);
+        cell.sprite.texture = Cell.getTexture(CellColor.NONE);
       }
       return;
     }
@@ -37,9 +37,9 @@ export class StaticMino {
     this.origin = origin.delta(minoToData[minoType].cursorOffset);
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
-      cell.sprite.texture = BoardCell.getTexture(fenNameToColor[minoType]);
+      cell.sprite.texture = Cell.getTexture(colorOverride ?? fenNameToColor[minoType]);
       cell.point = this.origin.delta(minoToData[minoType].pieceOffsets[i]);
-      BoardCell.setCellCoordinates(this.app, cell.sprite, cell.point);
+      Cell.setCellCoordinates(this.app, cell.sprite, cell.point);
     }
   }
 }
@@ -50,29 +50,26 @@ export default class ActiveMino extends StaticMino {
   private activeMinoType: MinoType = InvalidMinoType.NONE;
   private rotation = Direction.UP;
   // TODO: contemplating moving this logic into PieceHold
-  private canHold = true;
 
   private readonly ghostCells = [
-    new Sprite(BoardCell.getTexture(CellColor.NONE)),
-    new Sprite(BoardCell.getTexture(CellColor.NONE)),
-    new Sprite(BoardCell.getTexture(CellColor.NONE)),
-    new Sprite(BoardCell.getTexture(CellColor.NONE))
+    new Sprite(Cell.getTexture(CellColor.NONE)),
+    new Sprite(Cell.getTexture(CellColor.NONE)),
+    new Sprite(Cell.getTexture(CellColor.NONE)),
+    new Sprite(Cell.getTexture(CellColor.NONE))
     // TOOD: make the alpha not look awful
   ].map(ghostCell => (ghostCell.alpha = 0.5, ghostCell));
 
   constructor(private game: Game, private board: Board, private pieceQueue: PieceQueue, private hold: PieceHold) {
     super(game.app);
     this.minoContainer.addChild(...this.ghostCells);
-    // TODO: remove for testing
-    this.generate(pieceQueue.next());
   }
 
-  private generate(minoType: MinoType) {
+  public generate(minoType: MinoType) {
     this.activeMinoType = minoType;
     this.rotation = Direction.UP;
     this.assemble(minoType, new Point(4, 19));
     for (const ghostCell of this.ghostCells) {
-      ghostCell.texture = BoardCell.getTexture(fenNameToColor[minoType]);
+      ghostCell.texture = Cell.getTexture(fenNameToColor[minoType]);
     }
     if (!this.displace(point => point)) {
       this.game.pause(PauseType.GAME_OVER)
@@ -90,7 +87,7 @@ export default class ActiveMino extends StaticMino {
   }
 
   // displaces all points of the active mino, NOT moving the origin in the process. returns if successful.
-  private displace(movingTo: (point: Point) => Point): boolean {
+  public displace(movingTo: (point: Point) => Point): boolean {
     if (!this.cells.every(({ point }) => {
       const nextCell = this.board.get(movingTo(point));
       return nextCell && !nextCell.isSolid();
@@ -99,7 +96,7 @@ export default class ActiveMino extends StaticMino {
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
       cell.point = movingTo(cell.point);
-      BoardCell.setCellCoordinates(this.game.app, cell.sprite, cell.point);
+      Cell.setCellCoordinates(this.game.app, cell.sprite, cell.point);
     }
 
     // calculate the amount of distance piece can travel, then update ghost cells
@@ -117,7 +114,7 @@ export default class ActiveMino extends StaticMino {
     for (let i = 0; i < this.cells.length; i++) {
       const point = this.cells[i].point;
       const ghostCell = this.ghostCells[i];
-      BoardCell.setCellCoordinates(this.game.app, ghostCell, point.delta({ y: -shortestYDelta }));
+      Cell.setCellCoordinates(this.game.app, ghostCell, point.delta({ y: -shortestYDelta }));
     }
 
     return true;
@@ -169,17 +166,22 @@ export default class ActiveMino extends StaticMino {
     // TODO: maybe check all lines if a row can be cleared? this might not be needed but it could help
     this.board.clearLines(new Set(this.cells.map(cell => cell.point.y)));
     this.generate(this.pieceQueue.next());
-    this.canHold = true;
+    // freeing hold
+    this.hold.free();
   }
 
   public holdPiece() {
-    if (!this.canHold) return;
+    if (!this.hold.canHold) return;
     const nextPiece = this.hold.swapPiece(this.activeMinoType);
     if (nextPiece == InvalidMinoType.NONE) {
       this.generate(this.pieceQueue.next());
       return;
     }
     this.generate(nextPiece);
-    this.canHold = false;
+  }
+
+  public gameOver() {
+    this.cells.forEach(({ sprite }) => sprite.texture = Cell.getTexture(CellColor.UNBLOCKABLE));
+    this.ghostCells.forEach(sprite => sprite.texture = Cell.getTexture(CellColor.NONE));
   }
 }

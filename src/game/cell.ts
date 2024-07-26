@@ -23,6 +23,7 @@ export default class Cell {
   // TODO: maybe using getters and setters isn't the best idea
   public metadata: Metadata = null; // TODO: do i need to make this private? probably not
   public isSolid = () => this.color != CellColor.NONE;
+  private color = CellColor.NONE;
   get Color() { return this.color; }
   set Color(color: CellColor) {
     if (this.sprite) this.sprite.texture = Cell.getTexture(color != CellColor.NONE ? color : null);
@@ -32,12 +33,10 @@ export default class Cell {
     board: Board,
     app: Application<HTMLCanvasElement>,
     public point: Point,
-    private color = CellColor.NONE,
     isVisible = true
   ) {
     if (!isVisible) return;
     this.sprite = new Sprite();
-    this.Color = color;
     board.container.addChild(this.sprite);
     Cell.setCellCoordinates(app, this.sprite, point);
   }
