@@ -6,9 +6,19 @@ import Game from './game';
 import PieceQueue from './queue';
 import ActiveMino from './active-mino';
 
+export interface LineClearInfo {
+  linesCleared: number
+  b2b: number
+  combo: number
+  spinBonus: 'tspin' | 'mini' | 'none'
+}
+
 // TODO: im probably going to regret using inheritance for this so if i do then past me says i told you so
 export default class Board extends HashMap<IPoint, Cell> {
   public readonly container: Container;
+  // TODO: make these private potentially? idk
+  public b2b = 0;
+  public combo = 0;
 
   constructor(
     private game: Game,
@@ -37,14 +47,13 @@ export default class Board extends HashMap<IPoint, Cell> {
       })
   }
 
-
-
   // checks if a row needs to be cleared and clears it
-  public clearLines(rows: Iterable<number>) {
+  public clearLines(rows: Iterable<number>): LineClearInfo | null {
     // TODO: since i'm using a hashmap for cells, clearing rows is decently intensive so i might need to find a better solution
     const clearingRows = new Set([...rows]
       .filter(row => [...this.rowIterator(row)]
         .every(cell => cell.isSolid() && cell.Color != CellColor.UNBLOCKABLE)));
+    if (!clearingRows.size) return null;
     // rowOffset declares how many rows below this one are currently being cleared
     for (let row = 0, rowOffset = 0; row < this.game.height; row++) {
       if (!rowOffset && !clearingRows.has(row)) continue;
@@ -61,16 +70,28 @@ export default class Board extends HashMap<IPoint, Cell> {
         }
       }
     }
+    this.combo++;
+    if (clearingRows.size > 3) {
+      this.b2b++;
+    }
+    const lineClearInfo: LineClearInfo = {
+      combo: this.combo,
+      b2b: this.b2b,
+      linesCleared: clearingRows.size,
+      spinBonus: 'none'
+    }
+    this.game.events.emit("linesCleared", lineClearInfo);
+    return lineClearInfo;
   }
 
   public injectGarbage(openColumn?: number) {
     openColumn ??= Math.floor(Math.random() * this.game.width);
     const garbageRow = "##########";
-    const openRow = `${garbageRow.slice(0,openColumn)}_${garbageRow.slice(openColumn)}`;
+    const openRow = `${garbageRow.slice(0, openColumn)}_${garbageRow.slice(openColumn)}`;
     this.injectRow(openRow);
   }
-  
-  public injectRow(rowString = "##########") {
+
+  public injectRow(rowString = "$$$$$$$$$$") {
     // TODO: error handling here
     const injectionString = rowString.padStart(this.game.width, "#");
     // move everything up by one WOW this is a dumb thing to have to write
@@ -108,6 +129,10 @@ export default class Board extends HashMap<IPoint, Cell> {
       map.set(point, boardCell.toData());
     }
     return map;
+  }
+
+  public resetState() {
+    this.b2b = this.combo = 0;
   }
 
   public gameOver() {

@@ -19,24 +19,22 @@ export type Metadata = Partial<{
 }> | null;
 
 export default class Cell {
-  public sprite: Sprite | null = null;
+  public sprite = new Sprite();
   // TODO: maybe using getters and setters isn't the best idea
   public metadata: Metadata = null; // TODO: do i need to make this private? probably not
   public isSolid = () => this.color != CellColor.NONE;
   private color = CellColor.NONE;
   get Color() { return this.color; }
   set Color(color: CellColor) {
-    if (this.sprite) this.sprite.texture = Cell.getTexture(color != CellColor.NONE ? color : null);
+    this.sprite.texture = Cell.getTexture(color != CellColor.NONE || !this.isVisible ? color : null);
     this.color = color;
   }
   constructor(
     board: Board,
     app: Application<HTMLCanvasElement>,
     public point: Point,
-    isVisible = true
+    private isVisible = true
   ) {
-    if (!isVisible) return;
-    this.sprite = new Sprite();
     board.container.addChild(this.sprite);
     Cell.setCellCoordinates(app, this.sprite, point);
   }

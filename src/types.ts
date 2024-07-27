@@ -64,6 +64,8 @@ export enum Direction {
   LEFT = 3,
 }
 
+export type TSpinType = 'tspin' | 'mini' | 'none'
+
 export interface WallKicks {
   cw: IPoint[]
   ccw: IPoint[]

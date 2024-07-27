@@ -1,6 +1,6 @@
 import { Application, Container, Sprite } from 'pixi.js';
 import { Point } from '../structures';
-import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable, mainKickTable, flipKickTable, ValidMinoType, InvalidMinoType, PauseType } from '../types';
+import { MinoType, Direction, CellColor, minoToData, fenNameToColor, iKickTable, mainKickTable, flipKickTable, ValidMinoType, InvalidMinoType, PauseType, TSpinType } from '../types';
 import Game from './game';
 import PieceQueue from './queue';
 import PieceHold from './hold';
@@ -49,6 +49,7 @@ export default class ActiveMino extends StaticMino {
   // TODO: move active mino state into another class maybe
   private activeMinoType: MinoType = InvalidMinoType.NONE;
   private rotation = Direction.UP;
+  private lastMove: TSpinType = 'none';
   // TODO: contemplating moving this logic into PieceHold
 
   private readonly ghostCells = [
@@ -116,6 +117,7 @@ export default class ActiveMino extends StaticMino {
       const ghostCell = this.ghostCells[i];
       Cell.setCellCoordinates(this.game.app, ghostCell, point.delta({ y: -shortestYDelta }));
     }
+    this.lastMove = 'none';
 
     return true;
   }
@@ -135,12 +137,16 @@ export default class ActiveMino extends StaticMino {
       }[rotationCount];
       return this.origin.delta(flippedOffset);
     });
-    if (mainAttempt) return;
+    if (mainAttempt) {
+      this.lastMove = this.getTSpinType(0);
+      return;
+    }
     // TODO: rewrite this.displace() so that it can take multiple fallback points
     // TODO: this looks ugly i should change this
     const offsets = rotationCount == 2 ? flipKickTable[oldRotation] :
       (this.activeMinoType == ValidMinoType.I ? iKickTable : mainKickTable)[oldRotation][rotationCount == 1 ? "cw" : "ccw"];
-    const tableAttempt = offsets.find(offset => this.displace(point => {
+    // index is important for getting the correct t-spin type
+    const tableAttemptIndex = offsets.findIndex(offset => this.displace(point => {
       // TODO: make any changes from the above rotation attempt to this too
       const { x, y } = point.delta({ x: -this.origin.x, y: -this.origin.y });
       const flippedOffset = {
@@ -150,11 +156,32 @@ export default class ActiveMino extends StaticMino {
       }[rotationCount];
       return this.origin.delta(flippedOffset).delta(offset);
     }));
+    const tableAttempt = offsets[tableAttemptIndex];
     if (!tableAttempt) {
       this.rotation = oldRotation;
       return;
     }
     this.origin = this.origin.delta(tableAttempt);
+    this.lastMove = this.getTSpinType(tableAttemptIndex + 1);
+  }
+
+  private getTSpinType(kickIndex: number): TSpinType {
+    if (this.activeMinoType != ValidMinoType.T) return 'none';
+    const validOffsets = [{ x: 1, y: 1 }, { x: -1, y: 1 }, { x: -1, y: -1 }, { x: 1, y: -1 }]
+      // mapping to make the first two offsets face the front of the t piece
+      .map(({ x, y }) => ({
+        [Direction.UP]: { x, y },
+        [Direction.RIGHT]: { x: y, y: -x },
+        [Direction.DOWN]: { x: -x, y: -y },
+        [Direction.LEFT]: { x: -y, y: x }
+      }[this.rotation]))
+      .map(offset => {
+        const cell = this.board.get(this.origin.delta(offset));
+        return !cell || cell.isSolid();
+      });
+    const cornersFilled = validOffsets.reduce((a, isValid) => isValid ? a + 1 : a, 0);
+    if (cornersFilled < 3) return 'none';
+    return validOffsets[0] && validOffsets[1] || kickIndex >= 3 ? 'tspin' : 'mini';
   }
 
   public place() {
@@ -164,10 +191,11 @@ export default class ActiveMino extends StaticMino {
       this.board.get(point)!.Color = minoToData[this.activeMinoType].color;
     }
     // TODO: maybe check all lines if a row can be cleared? this might not be needed but it could help
-    this.board.clearLines(new Set(this.cells.map(cell => cell.point.y)));
+    const clearInfo = this.board.clearLines(new Set(this.cells.map(cell => cell.point.y)));
     this.generate(this.pieceQueue.next());
     // freeing hold
     this.hold.free();
+    if (clearInfo && !clearInfo.linesCleared) this.board.combo = 0;
   }
 
   public holdPiece() {

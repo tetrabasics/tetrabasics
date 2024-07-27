@@ -50,7 +50,7 @@ export default class Game {
 
     // handling board string
     const [cellString, queueString] = boardString?.split("?") ?? [];
-    this.setGameState({ cellString, queueString });
+    // this.setGameState({ cellString, queueString });
     
     this.pause(PauseType.OFF);
   }
@@ -79,11 +79,12 @@ export default class Game {
 
   public play = () => this.pause(PauseType.OFF);
   public pause(pauseType = PauseType.GAME_PAUSE) {
-    // can't resume if the game is over
-    if (this.pauseType == PauseType.GAME_OVER) return;
+    // can't resume if the game is over TODO: find a better system to override game over only when resetting
+    if (this.pauseType == PauseType.GAME_OVER && pauseType != PauseType.GAME_PAUSE) return;
     this.pauseType = pauseType;
     if (pauseType == PauseType.GAME_OVER) {
       this.board.gameOver();
+      this.events.emit("gameOver");
       this.activeMino.gameOver();
     }
     // TODO: additional pause shenanigans go here
@@ -94,6 +95,7 @@ export default class Game {
   public setGameState({ cellString, queueString }: Partial<GameStateOptions> = {}) {
     this.pause(PauseType.GAME_PAUSE);
     this.board.setCellsFromString(cellString);
+    this.board.b2b = this.board.combo = 0;
     this.queue.setQueue(queueString);
     this.hold.empty();
     this.activeMino.generate(this.queue.next());
