@@ -1,11 +1,12 @@
 import { Sprite, Container, Texture, BaseTexture, Rectangle, SCALE_MODES, Application } from 'pixi.js';
 import { CellColor } from '../types';
-import Game, { CELL_SIZE, GAME_SCALE } from './game';
+import { CELL_SIZE } from './game';
 import { IPoint, Point } from '../structures';
 // TODO: dynamic import for textures
 import grid from '/skin/gloss.png'
 import loss from '/board/empty.png'
 import Board from './board';
+import { GlowFilter } from '@pixi/filter-glow';
 
 export interface CellData {
   color: CellColor
@@ -16,12 +17,26 @@ export interface CellData {
 // other data that a board cell might need to keep track of
 export type Metadata = Partial<{
   isGlowing: boolean // TODO: make cells glow if this is true
-}> | null;
+}>;
 
 /* PRIVATE CLASS */
 export default class Cell {
   public sprite = new Sprite();
-  public metadata: Metadata = null; // TODO: do i need to make this private? probably not
+  private metadata: Metadata = {};
+  public getMetadata: () => Metadata = () => ({ ...this.metadata });
+  public setMetadata(metadata: Metadata) {
+    this.metadata = { ...this.metadata, ...metadata };
+    if (metadata.isGlowing) {
+      this.sprite.filters = [new GlowFilter({
+        distance: 15,      // The distance of the glow
+        outerStrength: 0,  // The strength of the glow's outer ring
+        innerStrength: 1,  // The strength of the glow's inner ring
+        color: 0xFFFFFF,   // The color of the glow (red in this case)
+      })];
+    } else {
+      this.sprite.filters = [];
+    }
+  }
   public isSolid = () => this.color != CellColor.NONE;
   private color = CellColor.NONE;
   public getColor = () => this.color;

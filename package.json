@@ -13,6 +13,7 @@
     "vite": "^5.0.13"
   },
   "dependencies": {
+    "@pixi/filter-glow": "^5.2.1",
     "@types/bidirectional-map": "^1.0.4",
     "bidirectional-map": "^1.1.1",
     "pixi.js": "^7.4.0"
