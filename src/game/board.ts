@@ -1,6 +1,6 @@
 import { Application, Color, Container } from 'pixi.js';
 import { HashMap, IPoint, Point } from '../structures';
-import { ValidMinoType, MinoType, fenNameToColor, CellColor } from '../types';
+import { ValidMinoType, MinoType, fenNameToColor, CellColor, TSpinType } from '../types';
 import Cell, { CellData } from './cell';
 import Game from './game';
 import PieceQueue from './queue';
@@ -19,6 +19,8 @@ export default class Board extends HashMap<IPoint, Cell> {
   public readonly container: Container;
   public b2b = 0;
   public combo = 0;
+  // TODO: i moved this here since board and activeMino can both access it but maybe i should move it somewhere else
+  public lastMove: TSpinType = 'none';
 
   constructor(
     private game: Game,
@@ -70,6 +72,7 @@ export default class Board extends HashMap<IPoint, Cell> {
         }
       }
     }
+    // TODO: move to new method
     this.combo++;
     if (clearingRows.size > 3) {
       this.b2b++;
@@ -78,8 +81,8 @@ export default class Board extends HashMap<IPoint, Cell> {
       combo: this.combo,
       b2b: this.b2b,
       linesCleared: clearingRows.size,
-      spinBonus: 'none'
-    }
+      spinBonus: this.lastMove
+    };
     this.game.events.emit("linesCleared", lineClearInfo);
     return lineClearInfo;
   }

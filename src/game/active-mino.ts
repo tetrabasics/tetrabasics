@@ -33,7 +33,6 @@ export class StaticMino {
       }
       return;
     }
-    // TODO: destroy current mino if it exists already
     this.origin = origin.delta(minoToData[minoType].cursorOffset);
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
@@ -49,7 +48,6 @@ export default class ActiveMino extends StaticMino {
   // TODO: move active mino state into another class maybe
   private activeMinoType: MinoType = InvalidMinoType.NONE;
   private rotation = Direction.UP;
-  private lastMove: TSpinType = 'none';
   // TODO: contemplating moving this logic into PieceHold
 
   private readonly ghostCells = [
@@ -117,7 +115,7 @@ export default class ActiveMino extends StaticMino {
       const ghostCell = this.ghostCells[i];
       Cell.setCellCoordinates(this.game.app, ghostCell, point.delta({ y: -shortestYDelta }));
     }
-    this.lastMove = 'none';
+    this.board.lastMove = 'none';
 
     return true;
   }
@@ -138,7 +136,7 @@ export default class ActiveMino extends StaticMino {
       return this.origin.delta(flippedOffset);
     });
     if (mainAttempt) {
-      this.lastMove = this.getTSpinType(0);
+      this.board.lastMove = this.getTSpinType(0);
       return;
     }
     // TODO: rewrite this.displace() so that it can take multiple fallback points
@@ -162,7 +160,7 @@ export default class ActiveMino extends StaticMino {
       return;
     }
     this.origin = this.origin.delta(tableAttempt);
-    this.lastMove = this.getTSpinType(tableAttemptIndex + 1);
+    this.board.lastMove = this.getTSpinType(tableAttemptIndex + 1);
   }
 
   private getTSpinType(kickIndex: number): TSpinType {
