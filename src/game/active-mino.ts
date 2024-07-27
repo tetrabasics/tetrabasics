@@ -188,7 +188,7 @@ export default class ActiveMino extends StaticMino {
     // TODO: make this hard drop and move it somewhere else
     while (this.move(Direction.DOWN));
     for (const { point } of this.cells) {
-      this.board.get(point)!.Color = minoToData[this.activeMinoType].color;
+      this.board.get(point)!.setColor(minoToData[this.activeMinoType].color);
     }
     // TODO: maybe check all lines if a row can be cleared? this might not be needed but it could help
     const clearInfo = this.board.clearLines(new Set(this.cells.map(cell => cell.point.y)));

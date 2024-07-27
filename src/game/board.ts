@@ -14,9 +14,9 @@ export interface LineClearInfo {
 }
 
 // TODO: im probably going to regret using inheritance for this so if i do then past me says i told you so
+/* PRIVATE CLASS */
 export default class Board extends HashMap<IPoint, Cell> {
   public readonly container: Container;
-  // TODO: make these private potentially? idk
   public b2b = 0;
   public combo = 0;
 
@@ -43,7 +43,7 @@ export default class Board extends HashMap<IPoint, Cell> {
     cellString.padStart(this.game.width * this.game.height, "_").split("")
       .forEach((piece, i) => {
         const point = new Point(i % this.game.width, (this.game.height - 1) - Math.floor(i / this.game.width));
-        this.get(point)!.Color = fenNameToColor[piece];
+        this.get(point)!.setColor(fenNameToColor[piece]);
       })
   }
 
@@ -52,14 +52,14 @@ export default class Board extends HashMap<IPoint, Cell> {
     // TODO: since i'm using a hashmap for cells, clearing rows is decently intensive so i might need to find a better solution
     const clearingRows = new Set([...rows]
       .filter(row => [...this.rowIterator(row)]
-        .every(cell => cell.isSolid() && cell.Color != CellColor.UNBLOCKABLE)));
+        .every(cell => cell.isSolid() && cell.getColor() != CellColor.UNBLOCKABLE)));
     if (!clearingRows.size) return null;
     // rowOffset declares how many rows below this one are currently being cleared
     for (let row = 0, rowOffset = 0; row < this.game.height; row++) {
       if (!rowOffset && !clearingRows.has(row)) continue;
       if (clearingRows.has(row)) {
         for (const cell of this.rowIterator(row)) {
-          cell.Color = CellColor.NONE;
+          cell.setColor(CellColor.NONE);
         }
         rowOffset++;
       } else {
@@ -102,7 +102,7 @@ export default class Board extends HashMap<IPoint, Cell> {
       }
     }
     for (let x = 0; x < this.game.width; x++) {
-      this.get({ x, y: 0 })!.Color = fenNameToColor[rowString[x]];
+      this.get({ x, y: 0 })!.setColor(fenNameToColor[rowString[x]]);
     }
     this.game.updateMino();
   }
@@ -131,11 +131,12 @@ export default class Board extends HashMap<IPoint, Cell> {
     return map;
   }
 
+  // TODO: should probably move this to activeMino or game
   public resetState() {
     this.b2b = this.combo = 0;
   }
 
   public gameOver() {
-    this.forEach(cell => cell.isSolid() && (cell.Color = CellColor.UNBLOCKABLE));
+    this.forEach(cell => cell.isSolid() && cell.setColor(CellColor.UNBLOCKABLE));
   }
 }

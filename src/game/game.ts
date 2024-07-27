@@ -13,11 +13,10 @@ export const GAME_SCALE = 1;
 export const CELL_SIZE = 30;
 
 /* The main class that creates a game object. This contains the main game structure and composes key classes for functionality. */
+/* PUBLIC CLASS */
 export default class Game {
   // app
-  // TODO: make these private except GameEvents
   public readonly app: Application<HTMLCanvasElement>;
-  public readonly board: Board;
   public readonly controls: GameControls;
   public readonly events: GameEvents;
 
@@ -29,7 +28,6 @@ export default class Game {
     private rootElement: HTMLElement = document.getElementById("board")!,
     public readonly peekRows = 2
   ) {
-    // TODO: start the game paused
     // game components
     const { holdDiv, boardDiv, queueDiv } = this.createComponents(rootElement);
 
@@ -72,6 +70,9 @@ export default class Game {
   private activeMino: ActiveMino;
   private queue: PieceQueue;
   private hold: PieceHold;
+  private board: Board;
+  public injectRow = (rowString?: string) => this.board.injectRow(rowString);
+  public injectGarbage = (openColumn?: number) => this.board.injectGarbage(openColumn);
 
   // pause state because sure
   private pauseType = PauseType.GAME_PAUSE;
@@ -79,8 +80,8 @@ export default class Game {
 
   public play = () => this.pause(PauseType.OFF);
   public pause(pauseType = PauseType.GAME_PAUSE) {
-    // can't resume if the game is over TODO: find a better system to override game over only when resetting
-    if (this.pauseType == PauseType.GAME_OVER && pauseType != PauseType.GAME_PAUSE) return;
+    // can't resume if the game is over, to do otherwise you have to set it manually
+    if (this.pauseType == PauseType.GAME_OVER) return;
     this.pauseType = pauseType;
     if (pauseType == PauseType.GAME_OVER) {
       this.board.gameOver();
@@ -93,6 +94,8 @@ export default class Game {
   // for setting up the game to start playing, use when resetting
   public reset = () => this.setGameState();
   public setGameState({ cellString, queueString }: Partial<GameStateOptions> = {}) {
+    // overriding PauseType.GAME_OVER
+    this.pauseType = PauseType.GAME_PAUSE;
     this.pause(PauseType.GAME_PAUSE);
     this.board.setCellsFromString(cellString);
     this.board.b2b = this.board.combo = 0;

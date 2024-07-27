@@ -18,16 +18,16 @@ export type Metadata = Partial<{
   isGlowing: boolean // TODO: make cells glow if this is true
 }> | null;
 
+/* PRIVATE CLASS */
 export default class Cell {
   public sprite = new Sprite();
-  // TODO: maybe using getters and setters isn't the best idea
   public metadata: Metadata = null; // TODO: do i need to make this private? probably not
   public isSolid = () => this.color != CellColor.NONE;
   private color = CellColor.NONE;
-  get Color() { return this.color; }
-  set Color(color: CellColor) {
+  public getColor = () => this.color;
+  public setColor(color: CellColor) {
     this.sprite.texture = Cell.getTexture(color != CellColor.NONE || !this.isVisible ? color : null);
-    this.color = color;
+    return this.color = color;
   }
   constructor(
     board: Board,
@@ -66,7 +66,9 @@ export default class Cell {
 
   // swaps the states of two cells without changing references 
   public swap(otherCell: Cell) {
-    [this.Color, otherCell.Color] = [otherCell.Color, this.Color];
+    const otherColor = otherCell.getColor();
+    otherCell.setColor(this.getColor());
+    this.setColor(otherColor);
     [this.metadata, otherCell.metadata] = [otherCell.metadata, this.metadata];
   }
 }

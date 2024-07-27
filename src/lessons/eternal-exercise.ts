@@ -19,7 +19,7 @@ export default async function eternalExercise() {
     textBox.innerHTML = `<p>Clear 40 lines with 10 quads only!<br>(<span id="quads">0</span>/10)</p>`
     count = 0;
     game.reset();
-    for (let i = 0; i < 10; i++) game.board.injectRow();
+    for (let i = 0; i < 10; i++) game.injectRow();
   }
   reset();
   const clearEvent = game.events.add("linesCleared", async ({ linesCleared }) => {
